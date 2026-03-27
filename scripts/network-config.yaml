@@ -1,0 +1,30 @@
+# SBS EnergyLink - Network Configuration
+# Ubuntu/Debian netplan format
+# Place at: /etc/netplan/01-sbs-energylink.yaml
+
+network:
+  version: 2
+  renderer: networkd
+
+  ethernets:
+
+    # eth0 — Tesla / Customer Network (DHCP or static)
+    # Connects to site LAN where EPMS/Tesla Site Controller lives
+    eth0:
+      dhcp4: true               # Change to false for static IP sites
+      # For static, uncomment below:
+      # dhcp4: false
+      # addresses: [192.168.1.200/24]
+      # routes:
+      #   - to: default
+      #     via: 192.168.1.1
+      # nameservers:
+      #   addresses: [8.8.8.8]
+
+    # eth1 — JACE Direct Link (always static)
+    # Private /30 network — only 2 hosts: this device and the JACE
+    # JACE Port 1: 10.10.10.2/30
+    eth1:
+      dhcp4: false
+      addresses: [10.10.10.1/30]
+      # No gateway — this is a direct crossover link, no routing needed

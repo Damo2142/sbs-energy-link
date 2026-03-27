@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SBS EnergyLink — Setup Complete</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Arial,sans-serif;background:#0D1117;color:#F5F5F5;min-height:100vh;display:flex;flex-direction:column}
+    .header{background:#161B22;border-bottom:3px solid #2EA043;padding:14px 24px;display:flex;align-items:center;gap:12px}
+    .header h1{font-size:1.2rem;color:#2EA043}
+    .header span{font-size:0.8rem;color:#8B949E;margin-left:auto}
+    .nav{display:flex;background:#161B22;border-bottom:1px solid #2D333B;padding:0 24px}
+    .nav a{padding:10px 18px;font-size:0.8rem;color:#8B949E;text-decoration:none;border-bottom:2px solid transparent}
+    .nav a:hover{color:#F5F5F5}
+    .nav a.active{color:#F5F5F5;border-bottom-color:#2EA043;font-weight:bold}
+    .steps{display:flex;background:#0D1117;border-bottom:1px solid #2D333B;padding:0 24px;flex-wrap:wrap}
+    .step{padding:12px 16px;font-size:0.78rem;border-bottom:3px solid transparent}
+    .step.done{color:#2EA043}
+    .step.active{color:#F5F5F5;border-bottom-color:#2EA043;font-weight:bold}
+    .main{flex:1;padding:28px 24px;max-width:800px;margin:0 auto;width:100%}
+
+    .section{background:#161B22;border:1px solid #2D333B;border-radius:6px;padding:20px;margin-bottom:16px}
+    .section h3{font-size:0.95rem;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+    .section p,.section li{font-size:0.85rem;color:#8B949E;line-height:1.6}
+    .section ul{padding-left:18px}
+    .section li{margin-bottom:4px}
+
+    .accent-green{border-left:3px solid #2EA043}
+    .accent-blue{border-left:3px solid #388BFD}
+    .accent-amber{border-left:3px solid #D29922}
+
+    .connect-box{background:#0D1117;border:2px solid #2EA043;border-radius:6px;padding:18px;margin:16px 0;text-align:center}
+    .connect-box .big{font-size:1.3rem;font-weight:bold;color:#F5F5F5;font-family:'Courier New',monospace;margin:8px 0}
+    .connect-box .sub{font-size:0.82rem;color:#8B949E}
+
+    .point-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}
+    .point{background:#0D1117;border:1px solid #2D333B;border-radius:4px;padding:6px 8px;font-size:0.75rem}
+    .point .obj{color:#388BFD;font-family:monospace}
+    .point .name{color:#8B949E}
+
+    .dash-link{display:inline-block;background:#0D1117;border:1px solid #D29922;border-radius:4px;padding:8px 16px;color:#D29922;text-decoration:none;font-size:0.88rem;margin:10px 0}
+    .dash-link:hover{background:#1a2a1a}
+  </style>
+</head>
+<body>
+<div class="header">
+  <span style="font-size:1.3rem">&#10003;</span>
+  <h1>EnergyLink Configured</h1>
+  <span>{{ cfg.site_name or 'Site' }} &middot; {{ cfg.unit_id_label or '' }}</span>
+</div>
+<div class="nav">
+  <a href="/step1" class="active">Setup Wizard</a>
+  <a href="/dashboard">Live Data</a>
+</div>
+<div class="steps">
+  <div class="step done">1 &middot; Site &#10003;</div>
+  <div class="step done">2 &middot; EPMS &#10003;</div>
+  <div class="step done">3 &middot; BAS &#10003;</div>
+  <div class="step done">4 &middot; Confirm &#10003;</div>
+  <div class="step active done">5 &middot; Handoff &#10003;</div>
+</div>
+
+<div class="main">
+
+  <!-- Setup complete -->
+  <div class="section accent-green">
+    <h3>&#10003; <span style="color:#2EA043">SBS EnergyLink setup is complete</span></h3>
+    <p>This appliance is reading BESS data via Modbus and broadcasting
+       <strong style="color:#F5F5F5">{{ cfg.bacnet.device_name if cfg.bacnet else 'SBS-EnergyLink-001' }}</strong>
+       as a BACnet/IP device on eth1.
+       <strong style="color:#F5F5F5">No further configuration is needed on this device.</strong></p>
+  </div>
+
+  <!-- Connection info for BAS integrator -->
+  <div class="section accent-blue">
+    <h3>&#8594; <span style="color:#388BFD">For Your BAS Integrator</span></h3>
+    <p style="margin-bottom:12px">Give the BAS integrator this connection information:</p>
+
+    <div class="connect-box">
+      <div class="sub">Connect your BAS to</div>
+      <div class="big">{{ cfg.eth1.ip_address if cfg.eth1 else '—' }} : 47808</div>
+      <div class="sub">BACnet/IP &middot; Device ID <strong style="color:#F5F5F5">{{ cfg.bacnet.device_id if cfg.bacnet else 9001 }}</strong> &middot; {{ cfg.bacnet.device_name if cfg.bacnet else 'SBS-EnergyLink-001' }}</div>
+    </div>
+
+    <p>Run BACnet discovery on the BAS network &mdash; Device ID {{ cfg.bacnet.device_id if cfg.bacnet else 9001 }} will appear with 23 points.</p>
+  </div>
+
+  <!-- 23 point list -->
+  <div class="section accent-amber">
+    <h3>&#128225; <span style="color:#D29922">23 BACnet Points</span></h3>
+    <div class="point-grid">
+      {% for pt in [
+        ('AI:1','App Version'),('AI:2','Capacity kWh'),('AI:3','BESS Power kW'),
+        ('AI:4','Setpoint kW'),('AI:5','Max Charge kW'),('AI:6','Max Discharge kW'),
+        ('AI:7','SOC %'),('AI:8','Charged kWh'),('AI:9','Discharged kWh'),
+        ('AI:10','Grid Power kW'),('AI:11','Grid Import kWh'),('AI:12','Grid Export kWh'),
+        ('AI:13','Solar Power kW'),('AI:14','Solar Energy kWh'),('AI:15','Load Power kW'),
+        ('AI:16','Load Energy kWh'),('BI:1','Error Present'),('BI:2','Comm Error'),
+        ('BI:3','Low Cell V'),('BI:4','High Cell V'),('BI:5','Low Temp'),
+        ('BI:6','High Temp'),('AV:1','Power Cmd kW')
+      ] %}
+      <div class="point">
+        <div class="obj">{{ pt[0] }}</div>
+        <div class="name">{{ pt[1] }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Dashboard link -->
+  <div class="section accent-amber" style="margin-top:4px">
+    <h3>&#128200; <span style="color:#D29922">Live Data Dashboard</span></h3>
+    <p style="margin-bottom:8px">A read-only view of all 23 data points is available for ongoing verification.</p>
+    <a class="dash-link" href="/dashboard">Open Live Data Dashboard &rarr;</a>
+  </div>
+
+  <!-- Reconfigure -->
+  <p style="font-size:0.8rem;color:#8B949E;margin-top:12px">
+    Need to change settings?
+    <a href="/step1" style="color:#C00000">&larr; Restart setup wizard</a>
+  </p>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SBS EnergyLink — Setup (3 of 5)</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Arial,sans-serif;background:#0D1117;color:#F5F5F5;min-height:100vh;display:flex;flex-direction:column}
+    .header{background:#161B22;border-bottom:3px solid #C00000;padding:14px 24px;display:flex;align-items:center;gap:12px}
+    .header h1{font-size:1.2rem;color:#C00000}
+    .header span{font-size:0.8rem;color:#8B949E;margin-left:auto}
+    .nav{display:flex;background:#161B22;border-bottom:1px solid #2D333B;padding:0 24px}
+    .nav a{padding:10px 18px;font-size:0.8rem;color:#8B949E;text-decoration:none;border-bottom:2px solid transparent}
+    .nav a:hover{color:#F5F5F5}
+    .nav a.active{color:#F5F5F5;border-bottom-color:#C00000;font-weight:bold}
+    .steps{display:flex;background:#0D1117;border-bottom:1px solid #2D333B;padding:0 24px;flex-wrap:wrap}
+    .step{padding:12px 16px;font-size:0.78rem;color:#8B949E;border-bottom:3px solid transparent}
+    .step.active{color:#F5F5F5;border-bottom-color:#C00000;font-weight:bold}
+    .step.done{color:#2EA043}
+    .main{flex:1;display:flex;justify-content:center;padding:32px}
+    .card{background:#161B22;border:1px solid #2D333B;border-radius:8px;padding:32px;width:100%;max-width:580px}
+    .card h2{font-size:1.1rem;margin-bottom:6px}
+    .card p{font-size:0.85rem;color:#8B949E;margin-bottom:20px}
+    .form-group{margin-bottom:16px}
+    label{display:block;font-size:0.78rem;color:#8B949E;margin-bottom:6px}
+    input{width:100%;background:#0D1117;border:1px solid #2D333B;border-radius:4px;padding:10px 12px;color:#F5F5F5;font-size:0.9rem}
+    input:focus{outline:none;border-color:#C00000}
+    .row{display:flex;gap:12px}
+    .row .form-group{flex:1}
+    .btn{background:#C00000;color:#fff;border:none;border-radius:4px;padding:11px 28px;font-size:0.9rem;cursor:pointer;width:100%;margin-top:8px}
+    .btn:hover{background:#a00000}
+    .btn-test{background:#1F2937;color:#F5F5F5;border:1px solid #2D333B;border-radius:4px;padding:9px 20px;font-size:0.85rem;cursor:pointer;margin-bottom:12px}
+    .result{margin-top:8px;padding:8px 12px;border-radius:4px;font-size:0.82rem;display:none}
+    .result.ok{background:#1a3a2a;color:#2EA043;display:block}
+    .result.err{background:#3a1a1a;color:#e74c3c;display:block}
+    .hint{font-size:0.78rem;color:#8B949E;margin-top:4px}
+    .divider{border:none;border-top:1px solid #2D333B;margin:20px 0}
+    .section-label{font-size:0.88rem;color:#388BFD;margin-bottom:14px;font-weight:bold}
+    .info-box{background:#0D1117;border:1px solid #2D333B;border-left:3px solid #388BFD;border-radius:4px;padding:14px;margin-bottom:20px;font-size:0.83rem;color:#8B949E;line-height:1.55}
+  </style>
+</head>
+<body>
+<div class="header">
+  <span style="color:#C00000;font-size:1.3rem">&#9889;</span>
+  <h1>SBS EnergyLink</h1>
+  <span>Step 3 of 5</span>
+</div>
+<div class="nav">
+  <a href="/step1" class="active">Setup Wizard</a>
+  <a href="/dashboard">Live Data</a>
+</div>
+<div class="steps">
+  <div class="step done">1 &middot; Site &#10003;</div>
+  <div class="step done">2 &middot; EPMS &#10003;</div>
+  <div class="step active">3 &middot; BAS / eth1</div>
+  <div class="step">4 &middot; Confirm</div>
+  <div class="step">5 &middot; Handoff</div>
+</div>
+<div class="main">
+  <div class="card">
+    <h2>Step 3 &mdash; BAS Network &amp; BACnet</h2>
+    <p>Configure the customer-facing Ethernet port and BACnet device settings. This is the IP and device ID your BAS integrator will use.</p>
+
+    <div class="info-box">
+      <strong style="color:#388BFD">&#8505; This IP is what the BAS sees</strong><br>
+      The eth1 IP address you set here is what the BAS integrator will point their system at.
+      Give them this IP and the BACnet Device ID after setup is complete.
+    </div>
+
+    <form method="POST" action="/step3">
+      <div class="section-label">&#128268; eth1 &mdash; BAS / Customer Network</div>
+
+      <div class="form-group">
+        <label>eth1 IP Address (static)</label>
+        <input type="text" name="eth1_ip"
+               value="{{ cfg.eth1.ip_address if cfg.eth1 else '' }}"
+               placeholder="192.168.1.100" required>
+        <div class="hint">Assign an IP on the BAS/building network</div>
+      </div>
+      <div class="row">
+        <div class="form-group">
+          <label>Subnet Mask</label>
+          <input type="text" name="eth1_mask"
+                 value="{{ cfg.eth1.subnet_mask if cfg.eth1 else '255.255.255.0' }}"
+                 placeholder="255.255.255.0">
+        </div>
+        <div class="form-group">
+          <label>Default Gateway</label>
+          <input type="text" name="eth1_gateway"
+                 value="{{ cfg.eth1.gateway if cfg.eth1 else '' }}"
+                 placeholder="192.168.1.1">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>DNS Server (optional)</label>
+        <input type="text" name="eth1_dns"
+               value="{{ cfg.eth1.dns if cfg.eth1 else '' }}"
+               placeholder="8.8.8.8">
+      </div>
+
+      <hr class="divider">
+      <div class="section-label">&#128225; BACnet/IP</div>
+
+      <div class="row">
+        <div class="form-group">
+          <label>BACnet Device ID</label>
+          <input type="number" name="bacnet_device_id"
+                 value="{{ cfg.bacnet.device_id if cfg.bacnet else 9001 }}">
+          <div class="hint">Default: 9001</div>
+        </div>
+        <div class="form-group">
+          <label>BACnet Device Name</label>
+          <input type="text" name="bacnet_device_name"
+                 value="{{ cfg.bacnet.device_name if cfg.bacnet else '' }}"
+                 placeholder="SBS-EnergyLink-001">
+        </div>
+      </div>
+
+      <button type="button" class="btn-test" onclick="testBACnet()">Test BACnet Server</button>
+      <div id="result" class="result"></div>
+
+      <button type="submit" class="btn">Save &amp; Continue &rarr;</button>
+    </form>
+  </div>
+</div>
+<script>
+function testBACnet(){
+  var el=document.getElementById("result");
+  el.className="result";el.textContent="Checking...";el.style.display="block";
+  fetch("/api/bacnet_test")
+    .then(function(r){return r.json()})
+    .then(function(d){
+      if(d.ok){el.className="result ok";el.textContent="&#10003; BACnet server listening on "+d.ip+":"+d.port;}
+      else{el.className="result err";el.textContent="&#10007; "+(d.error||"BACnet not active");}
+    })
+    .catch(function(e){el.className="result err";el.textContent="&#10007; Error: "+e;});
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+# SBS EnergyLink - Python Dependencies
+# Install with: pip install -r requirements.txt
+
+# Modbus TCP communication
+pymodbus==3.6.4
+
+# BACnet/IP server
+bacpypes3>=0.0.102
+
+# Web UI
+flask==3.0.2
+
+# Config file handling
+PyYAML==6.0.1
+
+# Utilities
+schedule==1.2.1

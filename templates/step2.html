@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SBS EnergyLink — Setup (2 of 5)</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Arial,sans-serif;background:#0D1117;color:#F5F5F5;min-height:100vh;display:flex;flex-direction:column}
+    .header{background:#161B22;border-bottom:3px solid #C00000;padding:14px 24px;display:flex;align-items:center;gap:12px}
+    .header h1{font-size:1.2rem;color:#C00000}
+    .header span{font-size:0.8rem;color:#8B949E;margin-left:auto}
+    .nav{display:flex;background:#161B22;border-bottom:1px solid #2D333B;padding:0 24px}
+    .nav a{padding:10px 18px;font-size:0.8rem;color:#8B949E;text-decoration:none;border-bottom:2px solid transparent}
+    .nav a:hover{color:#F5F5F5}
+    .nav a.active{color:#F5F5F5;border-bottom-color:#C00000;font-weight:bold}
+    .steps{display:flex;background:#0D1117;border-bottom:1px solid #2D333B;padding:0 24px;flex-wrap:wrap}
+    .step{padding:12px 16px;font-size:0.78rem;color:#8B949E;border-bottom:3px solid transparent}
+    .step.active{color:#F5F5F5;border-bottom-color:#C00000;font-weight:bold}
+    .step.done{color:#2EA043}
+    .main{flex:1;display:flex;justify-content:center;padding:32px}
+    .card{background:#161B22;border:1px solid #2D333B;border-radius:8px;padding:32px;width:100%;max-width:580px}
+    .card h2{font-size:1.1rem;margin-bottom:6px}
+    .card p{font-size:0.85rem;color:#8B949E;margin-bottom:20px}
+    .form-group{margin-bottom:16px}
+    label{display:block;font-size:0.78rem;color:#8B949E;margin-bottom:6px}
+    input,select{width:100%;background:#0D1117;border:1px solid #2D333B;border-radius:4px;padding:10px 12px;color:#F5F5F5;font-size:0.9rem}
+    input:focus,select:focus{outline:none;border-color:#C00000}
+    .row{display:flex;gap:12px}
+    .row .form-group{flex:1}
+    .btn{background:#C00000;color:#fff;border:none;border-radius:4px;padding:11px 28px;font-size:0.9rem;cursor:pointer;width:100%;margin-top:8px}
+    .btn:hover{background:#a00000}
+    .btn-test{background:#1F2937;color:#F5F5F5;border:1px solid #2D333B;border-radius:4px;padding:9px 20px;font-size:0.85rem;cursor:pointer;margin-bottom:12px}
+    .result{margin-top:8px;padding:8px 12px;border-radius:4px;font-size:0.82rem;display:none}
+    .result.ok{background:#1a3a2a;color:#2EA043;display:block}
+    .result.err{background:#3a1a1a;color:#e74c3c;display:block}
+    .hint{font-size:0.78rem;color:#8B949E;margin-top:4px}
+    .divider{border:none;border-top:1px solid #2D333B;margin:20px 0}
+    .section-label{font-size:0.88rem;color:#388BFD;margin-bottom:14px;font-weight:bold}
+    .static-fields{display:none}
+    .static-fields.show{display:block}
+  </style>
+</head>
+<body>
+<div class="header">
+  <span style="color:#C00000;font-size:1.3rem">&#9889;</span>
+  <h1>SBS EnergyLink</h1>
+  <span>Step 2 of 5</span>
+</div>
+<div class="nav">
+  <a href="/step1" class="active">Setup Wizard</a>
+  <a href="/dashboard">Live Data</a>
+</div>
+<div class="steps">
+  <div class="step done">1 &middot; Site &#10003;</div>
+  <div class="step active">2 &middot; EPMS / eth0</div>
+  <div class="step">3 &middot; BAS / eth1</div>
+  <div class="step">4 &middot; Confirm</div>
+  <div class="step">5 &middot; Handoff</div>
+</div>
+<div class="main">
+  <div class="card">
+    <h2>Step 2 &mdash; EPMS Connection &amp; eth0 Network</h2>
+    <p>Configure the BESS-side Ethernet port and the Modbus connection to the EPMS / Tesla Site Controller.</p>
+    <form method="POST" action="/step2">
+
+      <div class="section-label">&#128268; eth0 &mdash; BESS Network</div>
+      <div class="form-group">
+        <label>IP Mode</label>
+        <select name="eth0_mode" id="eth0_mode" onchange="toggleStatic()">
+          <option value="dhcp" {{ 'selected' if not cfg.eth0 or cfg.eth0.mode == 'dhcp' else '' }}>DHCP (automatic)</option>
+          <option value="static" {{ 'selected' if cfg.eth0 and cfg.eth0.mode == 'static' else '' }}>Static IP</option>
+        </select>
+      </div>
+      <div id="static-fields" class="static-fields">
+        <div class="form-group">
+          <label>eth0 IP Address</label>
+          <input type="text" name="eth0_ip" value="{{ cfg.eth0.ip_address if cfg.eth0 else '' }}" placeholder="192.168.1.10">
+        </div>
+        <div class="row">
+          <div class="form-group">
+            <label>Subnet Mask</label>
+            <input type="text" name="eth0_mask" value="{{ cfg.eth0.subnet_mask if cfg.eth0 else '255.255.255.0' }}" placeholder="255.255.255.0">
+          </div>
+          <div class="form-group">
+            <label>Gateway</label>
+            <input type="text" name="eth0_gateway" value="{{ cfg.eth0.gateway if cfg.eth0 else '' }}" placeholder="192.168.1.1">
+          </div>
+        </div>
+      </div>
+
+      <hr class="divider">
+      <div class="section-label">&#128268; Modbus TCP &mdash; EPMS</div>
+
+      <div class="form-group">
+        <label>EPMS / Tesla Site Controller IP Address</label>
+        <input type="text" name="modbus_host" id="modbus_host"
+               value="{{ cfg.modbus.host if cfg.modbus else '' }}"
+               placeholder="192.168.1.50" required>
+        <div class="hint">Confirm with the EPMS vendor or energy team</div>
+      </div>
+      <div class="row">
+        <div class="form-group">
+          <label>Modbus Port</label>
+          <input type="number" name="modbus_port"
+                 value="{{ cfg.modbus.port if cfg.modbus else 502 }}">
+          <div class="hint">Default: 502</div>
+        </div>
+        <div class="form-group">
+          <label>Unit ID</label>
+          <input type="number" name="modbus_unit_id"
+                 value="{{ cfg.modbus.unit_id if cfg.modbus else 1 }}">
+          <div class="hint">Default: 1</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Poll Interval (seconds)</label>
+        <input type="number" name="poll_interval"
+               value="{{ cfg.poll_interval_seconds or 30 }}" min="5" max="300">
+      </div>
+
+      <button type="button" class="btn-test" onclick="testConn()">Test EPMS Connection</button>
+      <div id="result" class="result"></div>
+
+      <button type="submit" class="btn">Save &amp; Continue &rarr;</button>
+    </form>
+  </div>
+</div>
+<script>
+function toggleStatic(){
+  var el=document.getElementById('static-fields');
+  el.className=document.getElementById('eth0_mode').value==='static'?'static-fields show':'static-fields';
+}
+toggleStatic();
+function testConn(){
+  var el=document.getElementById("result");
+  el.className="result";el.textContent="Testing...";el.style.display="block";
+  fetch("/api/test_modbus")
+    .then(function(r){return r.json()})
+    .then(function(d){
+      if(d.ok){el.className="result ok";el.textContent="&#10003; Connected to "+d.host+":"+d.port;}
+      else{el.className="result err";el.textContent="&#10007; "+( d.error||"No response");}
+    })
+    .catch(function(e){el.className="result err";el.textContent="&#10007; Error: "+e;});
+}
+</script>
+</body>
+</html>

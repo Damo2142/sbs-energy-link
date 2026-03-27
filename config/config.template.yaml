@@ -1,0 +1,45 @@
+# SBS EnergyLink - Site Configuration
+# This file is written by the commissioning web UI.
+
+# ── Site Identity ──────────────────────────────────────────────
+site_name: "Unconfigured Site"
+unit_id_label: "SBS-EL-0000"
+engineer_name: ""
+install_date: ""
+
+# ── eth0 — EPMS / Tesla Network ─────────────────────────────
+eth0:
+  mode: "dhcp"                  # "dhcp" or "static"
+  ip_address: ""                # Only used if mode=static
+  subnet_mask: "255.255.255.0"
+  gateway: ""
+
+# ── Modbus TCP (EPMS / Tesla Site Controller) ──────────────────
+modbus:
+  host: "192.168.1.50"          # IP of Tesla Site Controller / EPMS
+  port: 502                     # Standard Modbus TCP port
+  unit_id: 1                    # Modbus slave/unit ID
+
+# ── eth1 — BAS / Customer Network ────────────────────────────
+eth1:
+  ip_address: "192.168.1.100"   # Static IP on BAS network
+  subnet_mask: "255.255.255.0"
+  gateway: ""
+  dns: ""
+
+# ── BACnet/IP Output ───────────────────────────────────────────
+bacnet:
+  device_id: 9001               # Must be unique on the BACnet network
+  device_name: "SBS-EnergyLink-001"
+  ip_address: "192.168.1.100"   # Same as eth1 ip_address
+  network_mask: "24"
+  bind_interface: "eth1"
+
+# ── Polling ────────────────────────────────────────────────────
+poll_interval_seconds: 30
+stale_data_timeout_seconds: 120
+bacnet_refresh_seconds: 15
+
+# ── Web UI ─────────────────────────────────────────────────────
+webui_port: 80
+# webui_bind: "0.0.0.0"        # Dev only — override bind address
