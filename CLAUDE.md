@@ -36,18 +36,15 @@ Connect 4 via PiBridge connector. 14 digital inputs at 24VDC. Accessed via
 `revpimodio2` library at `/dev/piControl0`.
 
 **No JACE. No Fitlet3. No OnLogic.** The RevPi is the complete platform.
+**DI board is standard in every unit** — not optional.
 
 **Hardware BOM:** ~$885 total (Connect 4 + DI module + DIN enclosure + 24V PSU
-+ terminal blocks).
-
-**Two product SKUs:**
-- **EnergyLink Base** (~$2,500 sell) — Connect 4 only, no DI module, 23 BESS points
-- **EnergyLink Complete** (~$3,200 sell) — Connect 4 + DI module, 23 BESS + 14 DI points
++ terminal blocks). Identical hardware across all three product tiers.
 
 Assembly time: ~2.5 hours including commissioning.
 
 **Development:** Any Ubuntu machine with Python 3.10+. Single NIC is fine —
-dev defaults handle the rest.
+DEV_MODE defaults to PRO tier with all features available.
 
 ---
 
@@ -59,7 +56,7 @@ dev defaults handle the rest.
 │                                                  │
 │  eth0 ◄──── EPMS / Tesla network (Modbus TCP)   │
 │  eth1 ────► BAS / building network (BACnet/IP)   │
-│  RS485 ───► future BACnet MSTP (reserved)        │
+│  RS485 ───► BACnet MSTP trunk (via router-mstp)   │
 │                                                  │
 │  PiBridge ◄── RevPi DI (14x 24VDC inputs)       │
 └─────────────────────────────────────────────────┘
@@ -69,9 +66,9 @@ dev defaults handle the rest.
   DHCP or static IP, configured in wizard Step 2.
 - **eth1:** Faces customer BAS network. BACnet/IP server on UDP 47808.
   Static IP, configured in wizard Step 3.
-- **RS485:** `/dev/ttyRS485` with switchable 120 ohm termination. Reserved for
-  future BACnet MSTP via `misty` library (bridges bacpypes3 onto MSTP).
-  Same points available on both IP and MSTP simultaneously when enabled.
+- **RS485:** `/dev/ttyRS485` with switchable 120 ohm termination. BACnet MSTP
+  via bacnet-stack `router-mstp` C binary. Same points available on both
+  BACnet/IP and MSTP simultaneously. Configured in wizard Step 3.
 
 ---
 
@@ -138,7 +135,7 @@ sbs-energylink/
 ## Development Workflow
 
 **Dev server:** Ubuntu on `192.168.0.26`, Python 3.12, single NIC (`ens18`).
-DEV_MODE is not needed for basic operation — defaults work on the dev server.
+DEV_MODE defaults to PRO tier — all features available without a license file.
 
 **Quick start — two terminals:**
 
@@ -148,18 +145,21 @@ cd ~/projects/sbs-energylink
 source venv/bin/activate
 python tools/modbus_simulator.py
 
-# Terminal 2 — EnergyLink
+# Terminal 2 — EnergyLink (--sim uses built-in data, or point at simulator)
 cd ~/projects/sbs-energylink
 source venv/bin/activate
-python src/main.py --sim --loglevel DEBUG --port 8080
+python src/main.py --sim --port 8080
 ```
 
 **What you get:**
-- Setup wizard: http://192.168.0.26:8080 (or http://localhost:8080)
+- Setup wizard: http://192.168.0.26:8080 — DEV_MODE shows PRO badge
 - Dashboard: http://192.168.0.26:8080/dashboard
 - BACnet server: 192.168.0.26:47808 (UDP) — Device ID 9001
+- Modbus simulator: 0.0.0.0:5020 — cycling BESS data with fault sim
 - All APIs: `/api/status`, `/api/live_data`, `/api/confirm_status`,
-  `/api/test_modbus`, `/api/bacnet_test`, `/api/apply_network`
+  `/api/test_modbus`, `/api/bacnet_test`, `/api/apply_network`,
+  `/api/profiles`, `/api/test_register`, `/api/import_registers`,
+  `/api/di_status`
 
 **BACnet testing from Windows:** Use YABE (Yet Another BACnet Explorer).
 Point it at `192.168.0.26:47808`. Device 9001 appears with all objects
@@ -181,6 +181,8 @@ Set `DEV_MODE=1` environment variable for development. It affects:
 | `_ping_jace` / pings | Real ICMP | Skipped, returns True |
 | `systemctl restart` | Runs | Skipped |
 | RevPi DI inputs | Reads `/dev/piControl0` via revpimodio2 | Simulates random toggling |
+| License tier | Reads `/etc/sbs-energylink/license.key` | Defaults to PRO (all features) |
+| `/api/test_register` | Reads real Modbus device | Returns random simulated value |
 
 The `--port` flag overrides the web UI port (default 80, use 8080 for dev).
 The `--sim` flag generates fake BESS data without needing a real Modbus source.
@@ -336,14 +338,19 @@ commissioning and fallback use only."
 
 ## API Endpoints
 
-| Endpoint | Method | Purpose |
-|----------|--------|---------|
-| `/api/status` | GET | Site config + both interface IPs + connection status |
-| `/api/live_data` | GET | All point values (BESS + DI) + connection + staleness |
-| `/api/confirm_status` | GET | Step 4 uses this: eth0/eth1 status, sample values, `all_ok` |
-| `/api/test_modbus` | GET | Test Modbus connection to EPMS |
-| `/api/bacnet_test` | GET | Check if bacpypes3 is listening on 47808 |
-| `/api/apply_network` | POST | Production: write netplan + apply. DEV_MODE: run dev_network_setup.sh |
+| Endpoint | Method | Tier | Purpose |
+|----------|--------|------|---------|
+| `/api/status` | GET | All | Site config, IPs, connection status, license, MSTP, DI hardware |
+| `/api/live_data` | GET | All | All point values (BESS + DI) + connection + staleness |
+| `/api/confirm_status` | GET | All | Step 4: eth0/eth1 status, sample values, `all_ok` |
+| `/api/test_modbus` | GET | All | Test Modbus connection to EPMS |
+| `/api/bacnet_test` | GET | All | Check if bacpypes3 is listening on 47808 |
+| `/api/apply_network` | POST | All | Production: netplan apply. DEV_MODE: dev_network_setup.sh |
+| `/api/profiles` | GET | All | List available device profiles |
+| `/api/profile/<file>` | GET | All | Load specific profile with full register list |
+| `/api/di_status` | GET | All | Live DI input states (for wizard sim display) |
+| `/api/test_register` | POST | Universal+ | Read single register live, return raw + scaled value |
+| `/api/import_registers` | POST | Pro | Upload .xlsx/.csv, detect columns, map and import |
 
 ---
 
@@ -427,6 +434,8 @@ validation on real RevPi.
 - [x] Test register (Universal+) — live single-register read with raw+scaled
 - [x] DEV_MODE — auto-detect IP, mock Modbus, sim DI, skip MSTP, PRO tier
 - [x] first_boot.sh — license provisioning, MSTP binary build, full setup
+- [x] Modbus simulator (`tools/modbus_simulator.py`) — standalone Modbus TCP
+      server on port 5020, cycling BESS data with fault simulation every ~120s
 
 **TODO (hardware validation only):**
 - [ ] Build and test router-mstp on real RevPi hardware with RS485

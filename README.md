@@ -21,21 +21,30 @@ Tesla EPMS ──Modbus TCP──► EnergyLink ──BACnet/IP──► Any BAS
 
 - **23 BESS data points** — 16 Analog Inputs, 6 Binary Inputs (fault flags),
   1 writable Analog Value (power command). Same point list every site.
-- **14 digital alarm inputs** — RevPi DI expansion module, 24VDC. Each input
-  configurable with name, description, normally open/closed, alarm flag.
+- **14 digital alarm inputs** — RevPi DI expansion module (standard in every
+  unit), 24VDC. Configurable name, description, NO/NC, alarm flag per input.
   Appears as BACnet BI:7 through BI:20.
 - **Dual BACnet networks** — BACnet/IP on eth1 and BACnet MSTP on RS485,
   served simultaneously from the same device (ID 9001). MSTP routing via
   Steve Karg's bacnet-stack (proven C implementation, no external hardware).
-- **5-step setup wizard** — Browser-based commissioning UI. Configure both
-  NICs, Modbus target, BACnet settings, DI input names, and MSTP parameters.
-  Apply network config with one button.
+- **Three software tiers** — BESS (Tesla only), Universal (any Modbus device
+  with profile selector and live register test), Pro (Universal + Excel/CSV
+  import with column mapping wizard). License file set at first boot.
+- **5 built-in device profiles** — Tesla BESS, Electro Industries Shark 200,
+  SMA Solar Inverter, Cummins Generator, Carrier Chiller. Drop a new YAML
+  file in `config/device_profiles/` and it appears in the wizard automatically.
+- **5-step setup wizard** — Configure NICs, Modbus target, BACnet settings,
+  14 DI input names with NO/NC and alarm flags, MSTP parameters. License
+  tier badge shown on every page. Apply network config with one button.
+- **Excel/CSV import** (Pro tier) — Upload a register map spreadsheet, map
+  columns to fields, preview first 5 rows, then import all registers.
+- **Live register test** (Universal/Pro) — Read a single Modbus register from
+  the connected device, see raw and scaled values instantly.
 - **Live dashboard** — Read-only view of all points, auto-refresh every 15s.
-  For commissioning verification and fallback monitoring.
-- **Simulation mode** — `--sim` flag generates realistic cycling BESS data.
-  Full development without any hardware.
+- **Modbus simulator** — Standalone TCP server on port 5020 with cycling BESS
+  data and periodic fault simulation for end-to-end testing.
 - **DEV_MODE** — Auto-detects network interface, mocks Modbus, simulates DI
-  inputs, skips MSTP. Full-featured development on any Ubuntu machine.
+  inputs, skips MSTP, defaults to PRO tier. Full development on any Ubuntu box.
 
 ---
 
@@ -82,18 +91,21 @@ pip install -r requirements.txt
 # Terminal 1 — Modbus simulator (fake EPMS on port 5020)
 python tools/modbus_simulator.py
 
-# Terminal 2 — EnergyLink
-python src/main.py --sim --loglevel DEBUG --port 8080
+# Terminal 2 — EnergyLink (DEV_MODE auto-detected, defaults to PRO tier)
+python src/main.py --sim --port 8080
 ```
 
 **Open in browser:** http://localhost:8080
 
 **What you get:**
-- Setup wizard at http://localhost:8080 (5-step commissioning flow)
+- Setup wizard at http://localhost:8080 (PRO tier badge, all features)
 - Dashboard at http://localhost:8080/dashboard (live point values)
 - BACnet server on UDP 47808 (Device ID 9001, all objects)
-- APIs: `/api/status`, `/api/live_data`, `/api/confirm_status`,
-  `/api/test_modbus`, `/api/bacnet_test`, `/api/apply_network`
+- Modbus simulator on TCP 5020 (cycling BESS data with fault sim)
+- All APIs: `/api/status`, `/api/live_data`, `/api/profiles`,
+  `/api/test_register`, `/api/import_registers`, `/api/di_status`,
+  `/api/confirm_status`, `/api/test_modbus`, `/api/bacnet_test`,
+  `/api/apply_network`
 
 **BACnet testing from Windows:** Use [YABE](https://sourceforge.net/projects/yetanotherbacnetexplorer/)
 pointed at `<dev-server-ip>:47808`. Device 9001 appears with all configured
@@ -289,7 +301,7 @@ After first boot, open the setup wizard in a browser and walk through the
 ## Physical Install
 
 1. Mount DIN rail enclosure in electrical panel, connect 24VDC power
-2. Snap RevPi DI module onto Connect 4 via PiBridge (Complete SKU only)
+2. Snap RevPi DI module onto Connect 4 via PiBridge (standard in all units)
 3. Wire 24VDC field contacts to DI terminal blocks
 4. Plug laptop into either Ethernet port
 5. Open browser to setup wizard
@@ -314,6 +326,7 @@ After first boot, open the setup wizard in a browser and walk through the
 | flask       | Setup wizard + dashboard   |
 | PyYAML      | Config file read/write     |
 | schedule    | Poll interval management   |
+| openpyxl    | Excel import (Pro tier)    |
 | revpimodio2 | RevPi DI access (prod only)|
 
 **External (C, built from source):**
@@ -321,6 +334,80 @@ After first boot, open the setup wizard in a browser and walk through the
 | Package      | Purpose                         |
 |--------------|---------------------------------|
 | bacnet-stack | BACnet/IP-to-MSTP router binary |
+
+---
+
+## License System
+
+Each unit ships with a printed label showing part number, serial number,
+and QR code linking to the wizard. The serial on the label matches the
+license file.
+
+**License file** at `/etc/sbs-energylink/license.key`:
+```
+PRODUCT=SBS-EL-UNIV-001
+SERIAL=SBS-EL-0042
+TIER=universal
+ISSUED=2026-03-28
+SITE=
+```
+
+- `first_boot.sh` prompts for part number (validates against 3 valid SKUs)
+  and serial number (auto-generates from MAC if not entered)
+- Application reads license on startup and sets tier automatically
+- DEV_MODE with no license file defaults to PRO (all features for testing)
+- Missing license in production defaults to BESS (safe default)
+- `/api/status` includes license info (part_number, serial, tier, valid)
+- Wizard shows part number, serial, and tier badge on every page
+
+---
+
+## Adding Device Profiles
+
+Drop a YAML file in `config/device_profiles/` and it appears in the wizard
+profile selector automatically. No code changes needed.
+
+**Profile format:**
+```yaml
+name: "Device Name"
+manufacturer: "Manufacturer"
+model: "Model Number"
+protocol: "Modbus TCP"
+default_port: 502
+default_unit_id: 1
+
+registers:
+  - address: 200
+    name: "Point_Name"
+    type: INT16          # INT16, INT32, FLOAT, COIL
+    function_code: 4     # 3=holding, 4=input
+    scale: 1.0           # multiply raw value by this
+    bacnet_type: AI       # AI, BI, AV, BV
+    units: "kilowatts"   # BACnet engineering units
+    description: "Human readable description"
+    writable: false       # true for command points (AV)
+```
+
+**Built-in profiles:** Tesla BESS (17 registers), Shark 200 meter (14),
+SMA solar inverter (9), Cummins generator (16), Carrier chiller (14).
+
+---
+
+## API Endpoints
+
+| Endpoint | Method | Tier | Purpose |
+|----------|--------|------|---------|
+| `/api/status` | GET | All | Site config, IPs, license, MSTP, DI hardware |
+| `/api/live_data` | GET | All | All point values + connection + staleness |
+| `/api/confirm_status` | GET | All | Step 4 polling: both-sides status |
+| `/api/test_modbus` | GET | All | Test Modbus connection to EPMS |
+| `/api/bacnet_test` | GET | All | Check BACnet server on 47808 |
+| `/api/apply_network` | POST | All | Apply netplan (prod) or dev alias (dev) |
+| `/api/profiles` | GET | All | List available device profiles |
+| `/api/profile/<file>` | GET | All | Load profile with full register list |
+| `/api/di_status` | GET | All | Live DI input states |
+| `/api/test_register` | POST | Universal+ | Read single register, raw + scaled |
+| `/api/import_registers` | POST | Pro | Excel/CSV upload, column map, import |
 
 ---
 
