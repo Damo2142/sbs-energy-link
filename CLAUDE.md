@@ -88,7 +88,8 @@ sbs-energylink/
 │   ├── poller.py                ← Modbus TCP reader (Tesla EPMS registers)
 │   ├── bacnet_server.py         ← bacpypes3 BACnet/IP server, 23 BESS + up to 14 DI objects
 │   ├── data_store.py            ← Thread-safe shared state (BESSData dataclass)
-│   ├── revpi_di.py              ← RevPi DI module reader (14x 24VDC inputs) [TODO]
+│   ├── revpi_di.py              ← RevPi DI module reader (14x 24VDC inputs)
+│   ├── mstp_router.py           ← Manages bacnet-stack router-mstp subprocess
 │   └── web_ui.py                ← Flask: 5-step wizard + dashboard + APIs
 │
 ├── config/
@@ -113,6 +114,7 @@ sbs-energylink/
 │
 ├── scripts/
 │   ├── first_boot.sh            ← One-time device provisioning
+│   ├── build_mstp_router.sh     ← Compile bacnet-stack router-mstp binary
 │   └── network-config.yaml      ← Netplan template (production)
 │
 ├── docs/
@@ -190,9 +192,10 @@ The `--sim` flag generates fake BESS data without needing a real Modbus source.
 ```
 main thread          → signal handling, health logging
 ├── simulator thread → (--sim only) generates fake BESSData every 5s
+├── revpi_di thread  → reads DI module inputs (starts before BACnet)
 ├── bacnet thread    → asyncio event loop running bacpypes3
 │                      _run_async() → _start_bacnet() then update loop
-├── revpi_di thread  → reads DI module inputs, updates DataStore [TODO]
+├── mstp thread      → manages router-mstp subprocess (if enabled)
 └── webui thread     → Flask app.run() — all routes and APIs
 ```
 
@@ -219,16 +222,20 @@ Objects stored in dicts by instance number (`_ai_objects`, `_bi_objects`,
   actual subnet mask from `ip -o -4 addr show`. This ensures BACnet
   broadcasts hit the correct LAN broadcast address.
 
-### RevPi DI Module (revpi_di.py) [TODO]
+### RevPi DI Module (revpi_di.py)
 
 Reads 14 digital inputs from the RevPi DI expansion module via `revpimodio2`
 at `/dev/piControl0`. Each input is configurable in the wizard with:
 - Name and description
-- Normal state (normally open / normally closed)
+- Normal state (normally open / normally closed) — `is_active` property
+  handles NO/NC inversion automatically
 - Alarm on fault flag
 
-In DEV_MODE, simulates inputs with random toggling.
-DI values feed into BACnet objects BI:7 through BI:20.
+`DIInput` dataclass per channel; `RevPiDIReader` runs in its own thread
+(started before BACnet so objects are ready). In DEV_MODE or when
+revpimodio2 is unavailable, simulates with ~10% random toggling per cycle.
+DI values feed into BACnet objects BI:7 through BI:20. Channels without
+a name in config are disabled (no BACnet object created).
 
 ### Web UI (web_ui.py)
 
@@ -332,18 +339,58 @@ commissioning and fallback use only."
 
 ---
 
-## RS485 / BACnet MSTP (Future Feature)
+## RS485 / BACnet MSTP
 
 The RevPi Connect 4 has a built-in RS485 port at `/dev/ttyRS485` with
-switchable 120 ohm termination.
+switchable 120 ohm termination. EnergyLink acts as a BACnet router —
+same device, same points, accessible on both BACnet/IP and MSTP.
 
-**Plan:**
-- Use `misty` library to bridge bacpypes3 onto BACnet MSTP
-- Same 23+14 points available on both BACnet/IP (eth1) and MSTP (RS485)
-  simultaneously when enabled
-- Config section in wizard Step 3 saves MSTP settings (port, baud rate,
-  MAC address, max master) but feature disabled by default
-- Feature flag: `mstp.enabled` in config.yaml
+**Architecture — no external hardware router needed:**
+```
+MSTP controllers ──RS485──► router-mstp ──BACnet/IP──► bacpypes3 app
+  (BAS devices)              (C process)                (Python process)
+  Network 2                  routes NPDUs               Network 1 (eth1)
+```
+
+**Implementation:** Uses Steve Karg's `bacnet-stack` (GPL-2.0, v1.4.2)
+`router-mstp` binary — a proven C implementation that handles the MSTP
+token-passing state machine and serial I/O. The router bridges two BACnet
+networks: network 1 (BACnet/IP on eth1) and network 2 (MSTP on RS485).
+Our Python bacpypes3 device on network 1 becomes fully discoverable from
+MSTP devices through the router. Who-Is/I-Am, ReadProperty, WriteProperty
+and all other BACnet services are forwarded transparently.
+
+**Build:** `sudo bash scripts/build_mstp_router.sh` — clones bacnet-stack,
+compiles `router-mstp`, installs to `/usr/local/bin/`.
+
+**Manager:** `src/mstp_router.py` (`MSTProuter` class) manages the
+router-mstp subprocess — starts it with the correct environment variables,
+monitors the process, restarts with exponential backoff on crash. In
+DEV_MODE the router is skipped (no RS485 hardware on dev server).
+
+**Config** (`config.yaml`):
+```yaml
+mstp:
+  enabled: false              # set true to start MSTP router
+  port: "/dev/ttyRS485"       # RevPi onboard RS485
+  baud: 38400                 # standard BACnet MSTP baud rate
+  mac: 127                    # MSTP MAC address (0-127)
+  max_master: 127             # highest MAC on the trunk
+  ip_network: 1               # BACnet network number for IP side
+  mstp_network: 2             # BACnet network number for MSTP side
+```
+
+**RS485 wiring (RevPi X2 terminal):**
+```
+P   → Data+ (MSTP bus D+)
+N   → Data- (MSTP bus D-)
+GND → Functional earth (MSTP bus shield)
+```
+120 ohm termination switchable via DIP switch on the RevPi.
+
+**Status:** `/api/status` includes `mstp` object with enabled, running,
+serial_port, baud, mac, binary_installed, serial_port_exists, and
+last_error fields.
 
 ---
 
@@ -361,18 +408,28 @@ switchable 120 ohm termination.
 - [x] Nav bar on all pages (wizard + dashboard)
 - [x] Dev network helper scripts (alias IP for BACnet testing)
 - [x] `/api/apply_network` runs dev_network_setup.sh in DEV_MODE
+- [x] `src/revpi_di.py` — RevPi DI module reader complete. 14 channels via
+      revpimodio2, DEV_MODE simulates with ~10% random toggling per cycle.
+      NO/NC inversion via `is_active` property. Config-driven enable (channels
+      without a name are disabled). BI:7-20 created in BACnet server from DI
+      config. di_reader thread starts before BACnet in main.py.
+- [x] `src/mstp_router.py` — BACnet MSTP via bacnet-stack router-mstp.
+      MSTProuter class manages the C subprocess, configures via env vars,
+      monitors with restart + exponential backoff. MSTP status in /api/status.
+      DEV_MODE skips (no RS485 on dev server). Build script at
+      scripts/build_mstp_router.sh. Config template has mstp section.
 
 **TODO:**
-- [ ] `src/revpi_di.py` — RevPi DI module reader (14 inputs via revpimodio2,
-      simulated in DEV_MODE with random toggling)
-- [ ] Step 3 template — DI input configuration table (14 rows: name,
+- [ ] Step 3 template — DI input configuration table UI (14 rows: name,
       description, normal state open/closed, alarm on fault flag)
-- [ ] `bacnet_server.py` — Add BI:7-20 objects from DI config
-- [ ] RS485 MSTP feature flag — add `mstp` section to config and wizard
+- [ ] Step 3 template — MSTP settings section (enable toggle, baud, MAC,
+      max master) — config plumbing is done, just needs the UI
+- [ ] Build and test router-mstp on real RevPi hardware with RS485
 - [ ] Netplan apply — needs testing on real RevPi hardware
 - [ ] YABE discovery on Proxmox — likely needs bridge mode on VM NIC
       (not NAT), investigate and document
-- [ ] Production first_boot.sh needs update for RevPi platform
+- [ ] Production first_boot.sh — update for RevPi hardware detection,
+      include build_mstp_router.sh in provisioning
 - [ ] systemd service file needs update for new config structure
 - [ ] Write unit tests (test_energylink.py exists but needs content)
 - [ ] Watchdog — restart poller if stale > 5 minutes
@@ -390,11 +447,14 @@ switchable 120 ohm termination.
 4. **23 BESS points + 14 DI points** — BESS points fixed every site, DI points
    site-configurable via wizard. All in one BACnet device.
 5. **bacpypes3, not BAC0** — direct asyncio BACnet stack, no wrapper.
-6. **Wizard configures everything** — NICs, BACnet, DI inputs, MSTP settings.
-7. **Dashboard is a fallback** — primary data display is the integrator's BAS.
-8. **DEV_MODE detects real interface** — bacpypes3 needs a real IP, not 0.0.0.0.
-9. **Simulation mode always works** — `--sim` flag for dev without hardware.
-10. **Two SKUs** — Base (no DI, ~$2,500) and Complete (with DI, ~$3,200).
+6. **MSTP via bacnet-stack C router** — Python stays clean on BACnet/IP,
+   Steve Karg's proven C code handles MSTP token passing on RS485. No
+   external hardware router needed — one box does everything.
+7. **Wizard configures everything** — NICs, BACnet, DI inputs, MSTP settings.
+8. **Dashboard is a fallback** — primary data display is the integrator's BAS.
+9. **DEV_MODE detects real interface** — bacpypes3 needs a real IP, not 0.0.0.0.
+10. **Simulation mode always works** — `--sim` flag for dev without hardware.
+11. **Two SKUs** — Base (no DI, ~$2,500) and Complete (with DI, ~$3,200).
 
 ---
 
@@ -409,7 +469,14 @@ switchable 120 ohm termination.
 | schedule     | 1.2.1     | Poll interval management             |
 | revpimodio2  | —         | RevPi DI module access (production)  |
 
-Install: `pip install -r requirements.txt` (use venv at `./venv/`).
+**External (C, built from source):**
+
+| Package      | Version | Purpose                              |
+|--------------|---------|--------------------------------------|
+| bacnet-stack | 1.4.2   | BACnet/IP-to-MSTP router binary      |
+
+Install Python deps: `pip install -r requirements.txt` (use venv at `./venv/`).
+Build MSTP router: `sudo bash scripts/build_mstp_router.sh`.
 `revpimodio2` only required on RevPi hardware; ignored in dev.
 
 ---

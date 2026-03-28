@@ -28,6 +28,7 @@ from data_store import store
 from poller import ModbusPoller
 from bacnet_server import BACnetServer
 from revpi_di import RevPiDIReader
+from mstp_router import MSTProuter
 from web_ui import run_webui
 
 # ---------------------------------------------------------------------------
@@ -184,10 +185,20 @@ def main():
     threads.append(t2)
     t2.start()
 
+    # --- MSTP Router (bacnet-stack router-mstp process) ---
+    mstp = MSTProuter(config)
+    t_mstp = threading.Thread(
+        target=mstp.run,
+        name="mstp-router",
+        daemon=True
+    )
+    threads.append(t_mstp)
+    t_mstp.start()
+
     # --- Commissioning Web UI ---
     t3 = threading.Thread(
         target=run_webui,
-        args=(config,),
+        args=(config, mstp),
         name="web-ui",
         daemon=True
     )
@@ -200,6 +211,7 @@ def main():
         if not args.sim:
             poller.stop()
         di_reader.stop()
+        mstp.stop()
         bacnet.stop()
         sys.exit(0)
 

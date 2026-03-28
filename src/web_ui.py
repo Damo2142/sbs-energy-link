@@ -42,6 +42,14 @@ def save_config(cfg: dict):
         yaml.dump(cfg, f, default_flow_style=False)
 
 
+def _get_mstp_status() -> dict:
+    """Get MSTP router status from the MSTProuter instance."""
+    router = app.config.get("mstp_router")
+    if router is None:
+        return {"enabled": False}
+    return router.status()
+
+
 def _mask_to_prefix(mask: str) -> int:
     """Convert subnet mask like 255.255.255.0 to prefix length like 24."""
     try:
@@ -361,6 +369,7 @@ def api_status():
         "bacnet_ip": cfg.get("bacnet", {}).get("ip_address", ""),
         "data_stale": store.is_stale(),
         "dev_mode": _dev_mode(),
+        "mstp": _get_mstp_status(),
     })
 
 
@@ -481,7 +490,8 @@ def _resolve_bind_ip(config: dict) -> str:
         return "0.0.0.0"
 
 
-def run_webui(config: dict):
+def run_webui(config: dict, mstp_router=None):
+    app.config["mstp_router"] = mstp_router
     bind_ip = _resolve_bind_ip(config)
     port = config.get("webui_port", 80)
     log.info(f"Setup wizard on http://{bind_ip}:{port}")

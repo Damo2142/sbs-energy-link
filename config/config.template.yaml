@@ -35,6 +35,18 @@ bacnet:
   network_mask: "24"
   bind_interface: "eth1"
 
+# ── BACnet MSTP (RS485) ──────────────────────────────────────────
+# Requires router-mstp binary from bacnet-stack.
+# Build with: sudo bash scripts/build_mstp_router.sh
+mstp:
+  enabled: false                  # Set true to start MSTP router
+  port: "/dev/ttyRS485"           # RevPi onboard RS485
+  baud: 38400                     # Standard BACnet MSTP baud rate
+  mac: 127                        # MSTP MAC address (0-127)
+  max_master: 127                 # Highest MAC on the MSTP trunk
+  ip_network: 1                   # BACnet network number for IP side
+  mstp_network: 2                 # BACnet network number for MSTP side
+
 # ── Polling ────────────────────────────────────────────────────
 poll_interval_seconds: 30
 stale_data_timeout_seconds: 120
