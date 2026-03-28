@@ -168,15 +168,12 @@ class MSTProuter:
         Starts the router-mstp process and monitors it, restarting
         on unexpected exit with exponential backoff.
         """
-        if not self._enabled:
-            log.info("MSTP: disabled in config, router not started")
+        if os.environ.get("DEV_MODE") == "1":
+            log.info("MSTP: skipped in DEV_MODE")
             return
 
-        if os.environ.get("DEV_MODE") == "1":
-            log.info(
-                "MSTP: DEV_MODE active — RS485 router requires RevPi hardware. "
-                "MSTP routing disabled for this session."
-            )
+        if not self._enabled:
+            log.info("MSTP: disabled in config, router not started")
             return
 
         self._running = True

@@ -1,18 +1,17 @@
 # SBS EnergyLink
 
-**Tesla BESS to BACnet Integration Appliance**
+**Modbus to BACnet Integration Appliance**
 
-One box reads Tesla Battery Energy Storage System data via Modbus TCP and
-broadcasts it as a native BACnet device on both BACnet/IP and BACnet MSTP
-simultaneously. Any BAS -- Tridium, Honeywell, Siemens, Johnson Controls,
-Schneider -- discovers it directly. No JACE, no gateway, no middleware.
+One box reads any Modbus TCP or RTU device and broadcasts as a native BACnet
+device on both BACnet/IP and BACnet MSTP simultaneously. Any BAS -- Tridium,
+Honeywell, Siemens, Johnson Controls, Schneider -- discovers it directly.
+No JACE, no gateway, no middleware.
 
 ```
-Tesla EPMS ──Modbus TCP──► EnergyLink ──BACnet/IP──► Any BAS (eth1)
-     eth0                       │       ──BACnet MSTP─► Any BAS (RS485)
-                                │
-                          RevPi DI module
-                        (14x 24VDC alarm inputs)
+Inputs:   eth0 ──Modbus TCP──► EnergyLink ──BACnet/IP──► Any BAS (eth1)
+          RS485 ──Modbus RTU──►      │      ──BACnet MSTP─► Legacy BAS (RS485)
+                                     │
+Local:    RevPi DI module (14x 24VDC alarm inputs)
 ```
 
 ---
@@ -24,15 +23,19 @@ Tesla EPMS ──Modbus TCP──► EnergyLink ──BACnet/IP──► Any BAS
 - **14 digital alarm inputs** — RevPi DI expansion module (standard in every
   unit), 24VDC. Configurable name, description, NO/NC, alarm flag per input.
   Appears as BACnet BI:7 through BI:20.
-- **Dual BACnet networks** — BACnet/IP on eth1 and BACnet MSTP on RS485,
-  served simultaneously from the same device (ID 9001). MSTP routing via
-  Steve Karg's bacnet-stack (proven C implementation, no external hardware).
+- **Modbus RTU support** — Read up to 32 serial devices on the RS485 trunk,
+  each with its own Modbus address and device profile. Points added to BACnet.
+- **RS485 three modes** — Disabled, Modbus RTU Client, or BACnet MSTP.
+  Mutually exclusive (one physical port). Configured in wizard Step 3.
+- **Dual BACnet networks** — BACnet/IP on eth1 and BACnet MSTP on RS485
+  (when not used for RTU). Same device ID 9001, same points on both networks.
+  MSTP via Steve Karg's bacnet-stack (proven C, no external hardware router).
 - **Three software tiers** — BESS (Tesla only), Universal (any Modbus device
   with profile selector and live register test), Pro (Universal + Excel/CSV
   import with column mapping wizard). License file set at first boot.
-- **5 built-in device profiles** — Tesla BESS, Electro Industries Shark 200,
-  SMA Solar Inverter, Cummins Generator, Carrier Chiller. Drop a new YAML
-  file in `config/device_profiles/` and it appears in the wizard automatically.
+- **7 built-in device profiles** — Tesla BESS, Electro Industries Shark 200,
+  SMA Solar Inverter, Cummins Generator, Carrier Chiller, ABB VFD, Honeywell
+  Gas Meter. Drop a new YAML in `config/device_profiles/` to add more.
 - **5-step setup wizard** — Configure NICs, Modbus target, BACnet settings,
   14 DI input names with NO/NC and alarm flags, MSTP parameters. License
   tier badge shown on every page. Apply network config with one button.
@@ -128,6 +131,7 @@ sbs-energylink/
 │   ├── data_store.py            ← Thread-safe shared state (BESSData dataclass)
 │   ├── revpi_di.py              ← RevPi DI module reader (14x 24VDC inputs via revpimodio2)
 │   ├── mstp_router.py           ← Manages bacnet-stack router-mstp C subprocess
+│   ├── rtu_poller.py            ← Modbus RTU client for RS485 serial devices
 │   ├── license.py               ← License/tier system (BESS/Universal/Pro)
 │   ├── profiles.py              ← Device profile loader (config/device_profiles/*.yaml)
 │   └── web_ui.py                ← Flask: 5-step wizard + dashboard + REST APIs
@@ -140,7 +144,9 @@ sbs-energylink/
 │       ├── shark_200_meter.yaml ← Electro Industries Shark 200
 │       ├── sma_solar_inverter.yaml ← SMA solar inverter
 │       ├── cummins_generator.yaml  ← Cummins generator
-│       └── carrier_chiller.yaml    ← Carrier chiller
+│       ├── carrier_chiller.yaml    ← Carrier chiller
+│       ├── abb_vfd.yaml           ← ABB ACS580/ACS880 VFD
+│       └── honeywell_gas_meter.yaml ← Honeywell Elster gas meter
 │
 ├── templates/
 │   ├── step1.html               ← Site info: name, unit ID, engineer, date
@@ -389,7 +395,8 @@ registers:
 ```
 
 **Built-in profiles:** Tesla BESS (17 registers), Shark 200 meter (14),
-SMA solar inverter (9), Cummins generator (16), Carrier chiller (14).
+SMA solar inverter (9), Cummins generator (16), Carrier chiller (14),
+ABB VFD (14), Honeywell gas meter (10).
 
 ---
 

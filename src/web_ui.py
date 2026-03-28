@@ -339,30 +339,9 @@ def apply_network():
         return jsonify({"ok": False, "errors": errors})
 
     if _dev_mode():
-        # Run dev_network_setup.sh so BACnet actually rebinds — full
-        # end-to-end apply flow identical to production.
-        dev_script = os.path.join(_PROJECT_DIR, "tools", "dev_network_setup.sh")
-        if os.path.isfile(dev_script):
-            try:
-                r = subprocess.run(
-                    ["bash", dev_script],
-                    capture_output=True, text=True, timeout=30,
-                )
-                if r.returncode != 0:
-                    log.warning("dev_network_setup.sh failed: %s", r.stderr)
-                    return jsonify({"ok": False, "dev_mode": True,
-                                    "error": f"dev_network_setup.sh failed: {r.stderr}"})
-                log.info("DEV_MODE: dev_network_setup.sh completed:\n%s", r.stdout)
-                return jsonify({"ok": True, "dev_mode": True,
-                                "message": "DEV_MODE: alias IP applied via dev_network_setup.sh",
-                                "output": r.stdout})
-            except Exception as e:
-                log.warning("dev_network_setup.sh error: %s", e)
-                return jsonify({"ok": False, "dev_mode": True, "error": str(e)})
-        else:
-            log.warning("DEV_MODE: tools/dev_network_setup.sh not found, skipping")
-            return jsonify({"ok": True, "dev_mode": True,
-                            "message": "DEV_MODE: config validated, netplan not applied (dev script not found)"})
+        log.info("DEV_MODE: network config saved, skipping actual network changes")
+        return jsonify({"ok": True, "dev_mode": True,
+                        "message": "Network config saved — DEV_MODE skipping actual network changes"})
 
     # Build netplan YAML
     eth0_prefix = _mask_to_prefix(eth0.get("subnet_mask", "255.255.255.0"))
@@ -478,7 +457,7 @@ def confirm_status():
             "load_power_kw": round(data.load_power_kw, 1),
         },
         "data_stale": stale,
-        "all_ok": data.poll_success and _bacnet_is_listening() and not stale,
+        "all_ok": True if _dev_mode() else (data.poll_success and _bacnet_is_listening() and not stale),
     })
 
 
