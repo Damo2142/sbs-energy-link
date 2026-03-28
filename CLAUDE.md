@@ -396,34 +396,35 @@ last_error fields.
 
 ## Current Working State (2026-03-28)
 
-**Working:**
-- [x] BACnet server binds on 192.168.0.26:47808 (dev), all 23 BESS objects created
-- [x] Raw BACnet Who-Is/I-Am verified working (responds with Device 9001)
-- [x] ReadProperty for objectList returns all objects correctly
-- [x] Simulation mode generates realistic cycling BESS data
-- [x] Flask wizard all 5 steps render, POST/redirect works, config saves
-- [x] Dashboard with live auto-refresh of all 23 points
-- [x] All API endpoints return valid JSON, zero 500 errors
-- [x] DEV_MODE auto-detects interface IP and /24 mask for BACnet
-- [x] Nav bar on all pages (wizard + dashboard)
-- [x] Dev network helper scripts (alias IP for BACnet testing)
-- [x] `/api/apply_network` runs dev_network_setup.sh in DEV_MODE
-- [x] `src/revpi_di.py` — RevPi DI module reader complete. 14 channels via
-      revpimodio2, DEV_MODE simulates with ~10% random toggling per cycle.
-      NO/NC inversion via `is_active` property. Config-driven enable (channels
-      without a name are disabled). BI:7-20 created in BACnet server from DI
-      config. di_reader thread starts before BACnet in main.py.
-- [x] `src/mstp_router.py` — BACnet MSTP via bacnet-stack router-mstp.
-      MSTProuter class manages the C subprocess, configures via env vars,
-      monitors with restart + exponential backoff. MSTP status in /api/status.
-      DEV_MODE skips (no RS485 on dev server). Build script at
-      scripts/build_mstp_router.sh. Config template has mstp section.
+**Core product is feature-complete for initial RevPi testing.** All
+remaining items are wizard UI polish and hardware validation.
 
-**TODO:**
+**Working:**
+- [x] BACnet/IP server — binds on dev (192.168.0.26:47808), all 23 BESS
+      objects created, Who-Is/I-Am/ReadProperty verified working
+- [x] Simulation mode — realistic cycling BESS data via `--sim`
+- [x] Flask wizard — all 5 steps render, POST/redirect works, config saves
+- [x] Dashboard — live auto-refresh of all points (BESS + DI)
+- [x] All API endpoints return valid JSON, zero 500 errors
+- [x] DEV_MODE — auto-detect interface IP, mock Modbus, dev_network_setup.sh
+      for alias IP apply flow, MSTP skipped cleanly
+- [x] RevPi DI module (`src/revpi_di.py`) — 14 channels via revpimodio2,
+      DEV_MODE simulates with ~10% random toggling, NO/NC inversion via
+      `is_active`, config-driven enable, BI:7-20 created in BACnet server,
+      di_reader thread starts before BACnet in main.py
+- [x] BACnet MSTP (`src/mstp_router.py`) — bacnet-stack router-mstp C
+      binary bridges BACnet/IP (network 1, eth1) ↔ MSTP (network 2,
+      /dev/ttyRS485). MSTProuter manages subprocess with exponential backoff
+      restart. Build script at `scripts/build_mstp_router.sh`. DEV_MODE
+      skips (no RS485 on dev). Config template has full `mstp:` section.
+      `/api/status` includes MSTP status (enabled, running, mac, baud,
+      binary_installed, serial_port_exists, last_error)
+
+**TODO (UI polish + hardware validation):**
 - [ ] Step 3 template — DI input configuration table UI (14 rows: name,
       description, normal state open/closed, alarm on fault flag)
 - [ ] Step 3 template — MSTP settings section (enable toggle, baud, MAC,
-      max master) — config plumbing is done, just needs the UI
+      max master) — all config plumbing done, just needs the HTML form
 - [ ] Build and test router-mstp on real RevPi hardware with RS485
 - [ ] Netplan apply — needs testing on real RevPi hardware
 - [ ] YABE discovery on Proxmox — likely needs bridge mode on VM NIC
