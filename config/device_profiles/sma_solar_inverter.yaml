@@ -1,0 +1,91 @@
+# SMA Solar Inverter — Modbus Register Profile
+# SMA Sunny Boy / Sunny Tripower via SunSpec Modbus TCP.
+
+name: "SMA Solar Inverter"
+manufacturer: "SMA"
+model: "Sunny Boy / Sunny Tripower"
+protocol: "Modbus TCP"
+default_port: 502
+default_unit_id: 3
+
+registers:
+  - address: 30775
+    name: "AC_Power_W"
+    type: INT32
+    function_code: 3
+    scale: 1.0
+    bacnet_type: AI
+    units: "watts"
+    description: "AC Active Power Output"
+
+  - address: 30777
+    name: "AC_Energy_Total_Wh"
+    type: INT32
+    function_code: 3
+    scale: 1.0
+    bacnet_type: AI
+    units: "wattHours"
+    description: "Total AC Energy Produced"
+
+  - address: 30783
+    name: "AC_Energy_Today_Wh"
+    type: INT32
+    function_code: 3
+    scale: 1.0
+    bacnet_type: AI
+    units: "wattHours"
+    description: "AC Energy Produced Today"
+
+  - address: 30769
+    name: "DC_Power_W"
+    type: INT32
+    function_code: 3
+    scale: 1.0
+    bacnet_type: AI
+    units: "watts"
+    description: "DC Input Power from Panels"
+
+  - address: 30771
+    name: "DC_Voltage_V"
+    type: INT32
+    function_code: 3
+    scale: 0.01
+    bacnet_type: AI
+    units: "volts"
+    description: "DC Input Voltage"
+
+  - address: 30773
+    name: "DC_Current_A"
+    type: INT32
+    function_code: 3
+    scale: 0.001
+    bacnet_type: AI
+    units: "amperes"
+    description: "DC Input Current"
+
+  - address: 30953
+    name: "Internal_Temp_C"
+    type: INT32
+    function_code: 3
+    scale: 0.1
+    bacnet_type: AI
+    units: "degreesCelsius"
+    description: "Inverter Internal Temperature"
+
+  - address: 30201
+    name: "Operating_Status"
+    type: INT32
+    function_code: 3
+    scale: 1.0
+    bacnet_type: AI
+    units: "noUnits"
+    description: "Operating Status (35=MPP, 303=Off, 307=Standby)"
+
+  - address: 30213
+    name: "Grid_Relay_Status"
+    type: INT32
+    function_code: 3
+    scale: 1.0
+    bacnet_type: BI
+    units: "noUnits"
+    description: "Grid Relay Status (51=Closed, 311=Open)"

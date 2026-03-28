@@ -1,0 +1,136 @@
+# Electro Industries Shark 200 Power Meter — Modbus Register Profile
+# Common power quality meter used in commercial/industrial facilities.
+
+name: "Electro Industries Shark 200"
+manufacturer: "Electro Industries"
+model: "Shark 200"
+protocol: "Modbus TCP"
+default_port: 502
+default_unit_id: 1
+
+registers:
+  - address: 999
+    name: "Voltage_AN"
+    type: FLOAT
+    function_code: 3
+    scale: 1.0
+    bacnet_type: AI
+    units: "volts"
+    description: "Phase A-N Voltage"
+
+  - address: 1001
+    name: "Voltage_BN"
+    type: FLOAT
+    function_code: 3
+    scale: 1.0
+    bacnet_type: AI
+    units: "volts"
+    description: "Phase B-N Voltage"
+
+  - address: 1003
+    name: "Voltage_CN"
+    type: FLOAT
+    function_code: 3
+    scale: 1.0
+    bacnet_type: AI
+    units: "volts"
+    description: "Phase C-N Voltage"
+
+  - address: 1005
+    name: "Voltage_AB"
+    type: FLOAT
+    function_code: 3
+    scale: 1.0
+    bacnet_type: AI
+    units: "volts"
+    description: "Phase A-B Voltage"
+
+  - address: 1013
+    name: "Current_A"
+    type: FLOAT
+    function_code: 3
+    scale: 1.0
+    bacnet_type: AI
+    units: "amperes"
+    description: "Phase A Current"
+
+  - address: 1015
+    name: "Current_B"
+    type: FLOAT
+    function_code: 3
+    scale: 1.0
+    bacnet_type: AI
+    units: "amperes"
+    description: "Phase B Current"
+
+  - address: 1017
+    name: "Current_C"
+    type: FLOAT
+    function_code: 3
+    scale: 1.0
+    bacnet_type: AI
+    units: "amperes"
+    description: "Phase C Current"
+
+  - address: 1023
+    name: "Total_kW"
+    type: FLOAT
+    function_code: 3
+    scale: 1.0
+    bacnet_type: AI
+    units: "kilowatts"
+    description: "Total Real Power"
+
+  - address: 1025
+    name: "Total_kVAR"
+    type: FLOAT
+    function_code: 3
+    scale: 1.0
+    bacnet_type: AI
+    units: "kilovoltAmperesReactive"
+    description: "Total Reactive Power"
+
+  - address: 1027
+    name: "Total_kVA"
+    type: FLOAT
+    function_code: 3
+    scale: 1.0
+    bacnet_type: AI
+    units: "kilovoltAmperes"
+    description: "Total Apparent Power"
+
+  - address: 1029
+    name: "Power_Factor"
+    type: FLOAT
+    function_code: 3
+    scale: 1.0
+    bacnet_type: AI
+    units: "noUnits"
+    description: "Total Power Factor"
+
+  - address: 1031
+    name: "Frequency"
+    type: FLOAT
+    function_code: 3
+    scale: 1.0
+    bacnet_type: AI
+    units: "hertz"
+    description: "Line Frequency"
+
+  - address: 1501
+    name: "Total_kWh_Import"
+    type: FLOAT
+    function_code: 3
+    scale: 1.0
+    bacnet_type: AI
+    units: "kilowattHours"
+    description: "Total Energy Import (Received)"
+
+  - address: 1503
+    name: "Total_kWh_Export"
+    type: FLOAT
+    function_code: 3
+    scale: 1.0
+    bacnet_type: AI
+    units: "kilowattHours"
+    description: "Total Energy Export (Delivered)"

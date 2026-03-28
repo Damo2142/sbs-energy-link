@@ -10,6 +10,10 @@
     .header{background:#161B22;border-bottom:3px solid #C00000;padding:14px 24px;display:flex;align-items:center;gap:12px}
     .header h1{font-size:1.2rem;color:#C00000}
     .header span{font-size:0.8rem;color:#8B949E;margin-left:auto}
+    .badge{background:#C00000;color:#fff;padding:3px 10px;border-radius:12px;font-size:0.7rem;font-weight:bold;margin-left:8px}
+    .badge.pro{background:#7C3AED}
+    .badge.universal{background:#2563EB}
+    .license-info{font-size:0.72rem;color:#8B949E;margin-left:8px}
     .nav{display:flex;background:#161B22;border-bottom:1px solid #2D333B;padding:0 24px}
     .nav a{padding:10px 18px;font-size:0.8rem;color:#8B949E;text-decoration:none;border-bottom:2px solid transparent}
     .nav a:hover{color:#F5F5F5}
@@ -19,13 +23,13 @@
     .step.active{color:#F5F5F5;border-bottom-color:#C00000;font-weight:bold}
     .step.done{color:#2EA043}
     .main{flex:1;display:flex;justify-content:center;padding:32px}
-    .card{background:#161B22;border:1px solid #2D333B;border-radius:8px;padding:32px;width:100%;max-width:580px}
+    .card{background:#161B22;border:1px solid #2D333B;border-radius:8px;padding:32px;width:100%;max-width:820px}
     .card h2{font-size:1.1rem;margin-bottom:6px}
     .card p{font-size:0.85rem;color:#8B949E;margin-bottom:20px}
     .form-group{margin-bottom:16px}
     label{display:block;font-size:0.78rem;color:#8B949E;margin-bottom:6px}
-    input{width:100%;background:#0D1117;border:1px solid #2D333B;border-radius:4px;padding:10px 12px;color:#F5F5F5;font-size:0.9rem}
-    input:focus{outline:none;border-color:#C00000}
+    input,select{width:100%;background:#0D1117;border:1px solid #2D333B;border-radius:4px;padding:10px 12px;color:#F5F5F5;font-size:0.9rem}
+    input:focus,select:focus{outline:none;border-color:#C00000}
     .row{display:flex;gap:12px}
     .row .form-group{flex:1}
     .btn{background:#C00000;color:#fff;border:none;border-radius:4px;padding:11px 28px;font-size:0.9rem;cursor:pointer;width:100%;margin-top:8px}
@@ -38,12 +42,29 @@
     .divider{border:none;border-top:1px solid #2D333B;margin:20px 0}
     .section-label{font-size:0.88rem;color:#388BFD;margin-bottom:14px;font-weight:bold}
     .info-box{background:#0D1117;border:1px solid #2D333B;border-left:3px solid #388BFD;border-radius:4px;padding:14px;margin-bottom:20px;font-size:0.83rem;color:#8B949E;line-height:1.55}
+    /* DI Table */
+    .di-table{width:100%;border-collapse:collapse;font-size:0.8rem;margin-bottom:16px}
+    .di-table th{text-align:left;padding:8px 6px;color:#8B949E;border-bottom:1px solid #2D333B;font-weight:normal;font-size:0.72rem;text-transform:uppercase}
+    .di-table td{padding:6px;border-bottom:1px solid #1a1f2b}
+    .di-table input[type="text"]{padding:6px 8px;font-size:0.8rem}
+    .di-table input[type="checkbox"]{width:auto;margin:0}
+    .di-table select{padding:6px 8px;font-size:0.8rem}
+    .di-state{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}
+    .di-state.on{background:#2EA043}
+    .di-state.off{background:#484F58}
+    /* MSTP section */
+    .toggle-row{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+    .toggle-label{font-size:0.85rem;color:#F5F5F5}
   </style>
 </head>
 <body>
 <div class="header">
   <span style="color:#C00000;font-size:1.3rem">&#9889;</span>
   <h1>SBS EnergyLink</h1>
+  {% if lic %}
+  <span class="license-info">{{ lic.product }} / {{ lic.serial }}</span>
+  <span class="badge {% if lic.tier == 'pro' %}pro{% elif lic.tier == 'universal' %}universal{% endif %}">{{ lic.tier_name }}</span>
+  {% endif %}
   <span>Step 3 of 5</span>
 </div>
 <div class="nav">
@@ -59,8 +80,8 @@
 </div>
 <div class="main">
   <div class="card">
-    <h2>Step 3 &mdash; BAS Network &amp; BACnet</h2>
-    <p>Configure the customer-facing Ethernet port and BACnet device settings. This is the IP and device ID your BAS integrator will use.</p>
+    <h2>Step 3 &mdash; BAS Network, BACnet &amp; Inputs</h2>
+    <p>Configure the customer-facing Ethernet port, BACnet device, digital inputs, and optional MSTP.</p>
 
     <div class="info-box">
       <strong style="color:#388BFD">&#8505; This IP is what the BAS sees</strong><br>
@@ -118,7 +139,99 @@
       </div>
 
       <button type="button" class="btn-test" onclick="testBACnet()">Test BACnet Server</button>
-      <div id="result" class="result"></div>
+      <div id="bacnet-result" class="result"></div>
+
+      <hr class="divider">
+      <div class="section-label">&#128297; Digital Inputs &mdash; RevPi DI Module</div>
+
+      <div class="info-box">
+        14 digital inputs at 24VDC from the RevPi DI expansion module.
+        Enabled inputs appear as BACnet Binary Input objects <strong>BI:7</strong> through <strong>BI:20</strong>.
+        Set normal state to match field wiring (normally open or normally closed).
+      </div>
+
+      <table class="di-table">
+        <thead>
+          <tr>
+            <th style="width:30px">On</th>
+            <th style="width:30px">Ch</th>
+            <th>Name</th>
+            <th>Description</th>
+            <th style="width:90px">Normal</th>
+            <th style="width:50px">Alarm</th>
+            {% if dev_mode %}<th style="width:40px">Sim</th>{% endif %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for ch in range(1, 15) %}
+          {% set di = namespace(name='', desc='', state='open', alarm=false, enabled=false) %}
+          {% for inp in cfg.get('di_inputs', []) %}
+            {% if inp.channel == ch %}
+              {% set di.name = inp.name %}
+              {% set di.desc = inp.get('description', '') %}
+              {% set di.state = inp.get('normal_state', 'open') %}
+              {% set di.alarm = inp.get('alarm_on_fault', false) %}
+              {% set di.enabled = true %}
+            {% endif %}
+          {% endfor %}
+          <tr>
+            <td><input type="checkbox" name="di_{{ ch }}_enabled" {% if di.enabled %}checked{% endif %}></td>
+            <td style="color:#8B949E">{{ ch }}</td>
+            <td><input type="text" name="di_{{ ch }}_name" value="{{ di.name }}" placeholder="Input {{ ch }}"></td>
+            <td><input type="text" name="di_{{ ch }}_desc" value="{{ di.desc }}" placeholder="Description"></td>
+            <td>
+              <select name="di_{{ ch }}_state">
+                <option value="open" {% if di.state == 'open' %}selected{% endif %}>NO</option>
+                <option value="closed" {% if di.state == 'closed' %}selected{% endif %}>NC</option>
+              </select>
+            </td>
+            <td style="text-align:center"><input type="checkbox" name="di_{{ ch }}_alarm" {% if di.alarm %}checked{% endif %}></td>
+            {% if dev_mode %}<td id="di-sim-{{ ch }}"><span class="di-state off"></span></td>{% endif %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <hr class="divider">
+      <div class="section-label">&#128268; BACnet MSTP &mdash; RS485</div>
+
+      <div class="info-box">
+        Enable MSTP to serve the same BACnet points on the RS485 trunk simultaneously with BACnet/IP.
+        Uses the RevPi onboard RS485 port (/dev/ttyRS485). Requires the router-mstp binary.
+      </div>
+
+      <div class="toggle-row">
+        <input type="checkbox" name="mstp_enabled" id="mstp_enabled" style="width:auto"
+               {% if cfg.get('mstp', {}).get('enabled') %}checked{% endif %}
+               onchange="toggleMSTP()">
+        <label for="mstp_enabled" class="toggle-label">Enable MSTP routing</label>
+      </div>
+
+      <div id="mstp-fields" style="display:none">
+        <div class="row">
+          <div class="form-group">
+            <label>MSTP MAC Address (0-127)</label>
+            <input type="number" name="mstp_mac" min="0" max="127"
+                   value="{{ cfg.get('mstp', {}).get('mac', 127) }}">
+          </div>
+          <div class="form-group">
+            <label>Baud Rate</label>
+            <select name="mstp_baud">
+              {% set baud = cfg.get('mstp', {}).get('baud', 38400) %}
+              <option value="9600" {% if baud == 9600 %}selected{% endif %}>9600</option>
+              <option value="19200" {% if baud == 19200 %}selected{% endif %}>19200</option>
+              <option value="38400" {% if baud == 38400 %}selected{% endif %}>38400</option>
+              <option value="76800" {% if baud == 76800 %}selected{% endif %}>76800</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>MSTP Network Number</label>
+          <input type="number" name="mstp_network" min="1" max="65534"
+                 value="{{ cfg.get('mstp', {}).get('mstp_network', 2) }}">
+          <div class="hint">Must differ from IP network (1). Default: 2</div>
+        </div>
+      </div>
 
       <button type="submit" class="btn">Save &amp; Continue &rarr;</button>
     </form>
@@ -126,16 +239,39 @@
 </div>
 <script>
 function testBACnet(){
-  var el=document.getElementById("result");
+  var el=document.getElementById("bacnet-result");
   el.className="result";el.textContent="Checking...";el.style.display="block";
   fetch("/api/bacnet_test")
     .then(function(r){return r.json()})
     .then(function(d){
-      if(d.ok){el.className="result ok";el.textContent="&#10003; BACnet server listening on "+d.ip+":"+d.port;}
-      else{el.className="result err";el.textContent="&#10007; "+(d.error||"BACnet not active");}
+      if(d.ok){el.className="result ok";el.textContent="\u2713 BACnet server listening on "+d.ip+":"+d.port;}
+      else{el.className="result err";el.textContent="\u2717 "+(d.error||"BACnet not active");}
     })
-    .catch(function(e){el.className="result err";el.textContent="&#10007; Error: "+e;});
+    .catch(function(e){el.className="result err";el.textContent="\u2717 Error: "+e;});
 }
+
+function toggleMSTP(){
+  var el=document.getElementById("mstp-fields");
+  el.style.display=document.getElementById("mstp_enabled").checked?"block":"none";
+}
+toggleMSTP();
+
+{% if dev_mode %}
+// Poll DI sim states every 2 seconds
+setInterval(function(){
+  fetch("/api/di_status")
+    .then(function(r){return r.json()})
+    .then(function(d){
+      d.inputs.forEach(function(inp){
+        var td=document.getElementById("di-sim-"+inp.channel);
+        if(td){
+          var cls=inp.raw_value?"di-state on":"di-state off";
+          td.innerHTML='<span class="'+cls+'"></span>';
+        }
+      });
+    }).catch(function(){});
+}, 2000);
+{% endif %}
 </script>
 </body>
 </html>

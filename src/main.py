@@ -29,6 +29,7 @@ from poller import ModbusPoller
 from bacnet_server import BACnetServer
 from revpi_di import RevPiDIReader
 from mstp_router import MSTProuter
+from license import load_license
 from web_ui import run_webui
 
 # ---------------------------------------------------------------------------
@@ -143,7 +144,9 @@ def main():
     config = load_config(args.config)
     if args.port is not None:
         config["webui_port"] = args.port
-    log.info(f"SBS EnergyLink starting — Site: {config.get('site_name', 'Unconfigured')}")
+    lic = load_license()
+    log.info(f"SBS EnergyLink starting — Site: {config.get('site_name', 'Unconfigured')} "
+             f"— Tier: {lic.tier_name} ({lic.product})")
 
     threads = []
 
@@ -198,7 +201,7 @@ def main():
     # --- Commissioning Web UI ---
     t3 = threading.Thread(
         target=run_webui,
-        args=(config, mstp),
+        args=(config, mstp, di_reader),
         name="web-ui",
         daemon=True
     )

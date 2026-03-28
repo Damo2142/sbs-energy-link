@@ -1,0 +1,183 @@
+# Tesla BESS / EPMS — Modbus Register Profile
+# Used by EnergyLink BESS tier (locked to this profile)
+# and available as a preset in Universal/Pro tiers.
+
+name: "Tesla BESS / EPMS"
+manufacturer: "Tesla"
+model: "Megapack / Powerpack Site Controller"
+protocol: "Modbus TCP"
+default_port: 502
+default_unit_id: 1
+
+registers:
+  # --- Analog Inputs (FC04 - Read Input Registers) ---
+  - address: 200
+    name: "App_Version"
+    type: INT16
+    function_code: 4
+    scale: 1.0
+    bacnet_type: AI
+    units: "noUnits"
+    description: "Application Version"
+
+  - address: 201
+    name: "BESS_Capacity_kWh"
+    type: INT32
+    function_code: 4
+    scale: 1.0
+    bacnet_type: AI
+    units: "kilowattHours"
+    description: "BESS Total Nominal Capacity"
+
+  - address: 202
+    name: "BESS_Power_kW"
+    type: INT16
+    function_code: 4
+    scale: 1.0
+    bacnet_type: AI
+    units: "kilowatts"
+    description: "Total Power from BESS"
+
+  - address: 203
+    name: "BESS_Power_Setpoint_kW"
+    type: INT16
+    function_code: 4
+    scale: 1.0
+    bacnet_type: AI
+    units: "kilowatts"
+    description: "Active Power Commanded to All BESS"
+
+  - address: 204
+    name: "BESS_Max_Charge_kW"
+    type: INT16
+    function_code: 4
+    scale: 1.0
+    bacnet_type: AI
+    units: "kilowatts"
+    description: "BESS Maximum Charge Power"
+
+  - address: 205
+    name: "BESS_Max_Discharge_kW"
+    type: INT16
+    function_code: 4
+    scale: 1.0
+    bacnet_type: AI
+    units: "kilowatts"
+    description: "BESS Maximum Discharge Power"
+
+  - address: 206
+    name: "BESS_SOC_Pct"
+    type: INT16
+    function_code: 4
+    scale: 1.0
+    bacnet_type: AI
+    units: "percent"
+    description: "BESS State of Charge - Weighted Average"
+
+  - address: 207
+    name: "BESS_Error_Present"
+    type: INT16
+    function_code: 4
+    scale: 1.0
+    bacnet_type: BI
+    units: "noUnits"
+    description: "BESS Error Present (0=OK, 1=Error)"
+
+  - address: 208
+    name: "BESS_Fault_Bits"
+    type: INT16
+    function_code: 4
+    scale: 1.0
+    bacnet_type: BI
+    units: "noUnits"
+    description: "BESS Fault Flags (bit-packed)"
+    bit_fields:
+      - bit: 0
+        name: "BESS_Comm_Error"
+        description: "Communication Error"
+      - bit: 1
+        name: "BESS_Low_Cell_Voltage"
+        description: "Low Cell Voltage"
+      - bit: 2
+        name: "BESS_High_Cell_Voltage"
+        description: "High Cell Voltage"
+      - bit: 3
+        name: "BESS_Low_Temp_Error"
+        description: "Low Temperature Error"
+      - bit: 4
+        name: "BESS_High_Temp_Error"
+        description: "High Temperature Error"
+
+  - address: 209
+    name: "BESS_Total_Charged_kWh"
+    type: INT32
+    function_code: 4
+    scale: 1.0
+    bacnet_type: AI
+    units: "kilowattHours"
+    description: "BESS Total Energy Charged"
+
+  - address: 211
+    name: "Grid_Power_kW"
+    type: INT16
+    function_code: 4
+    scale: 1.0
+    bacnet_type: AI
+    units: "kilowatts"
+    description: "Grid Power"
+
+  - address: 212
+    name: "Grid_Energy_Import_kWh"
+    type: INT32
+    function_code: 4
+    scale: 1.0
+    bacnet_type: AI
+    units: "kilowattHours"
+    description: "Grid Energy Import"
+
+  - address: 214
+    name: "Solar_Power_kW"
+    type: INT16
+    function_code: 4
+    scale: 1.0
+    bacnet_type: AI
+    units: "kilowatts"
+    description: "Solar Power"
+
+  - address: 215
+    name: "Solar_Energy_Produced_kWh"
+    type: INT32
+    function_code: 4
+    scale: 1.0
+    bacnet_type: AI
+    units: "kilowattHours"
+    description: "Solar Energy Produced"
+
+  - address: 216
+    name: "Load_Power_kW"
+    type: INT16
+    function_code: 4
+    scale: 1.0
+    bacnet_type: AI
+    units: "kilowatts"
+    description: "Load Power"
+
+  - address: 217
+    name: "Load_Energy_Consumed_kWh"
+    type: INT32
+    function_code: 4
+    scale: 1.0
+    bacnet_type: AI
+    units: "kilowattHours"
+    description: "Load Energy Consumed"
+
+  # --- Writable (FC03/06 - Holding Registers) ---
+  - address: 300
+    name: "BESS_Active_Power_Cmd_kW"
+    type: INT16
+    function_code: 3
+    scale: 1.0
+    bacnet_type: AV
+    units: "kilowatts"
+    description: "Active Power Commanded to EMS"
+    writable: true

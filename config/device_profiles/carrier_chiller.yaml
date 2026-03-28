@@ -1,0 +1,137 @@
+# Carrier Chiller — Modbus Register Profile
+# Carrier 30XA / 30RB air-cooled chiller via Modbus TCP.
+
+name: "Carrier Chiller"
+manufacturer: "Carrier"
+model: "30XA / 30RB Air-Cooled"
+protocol: "Modbus TCP"
+default_port: 502
+default_unit_id: 1
+
+registers:
+  - address: 100
+    name: "Entering_Water_Temp"
+    type: INT16
+    function_code: 3
+    scale: 0.1
+    bacnet_type: AI
+    units: "degreesCelsius"
+    description: "Entering Chilled Water Temperature"
+
+  - address: 101
+    name: "Leaving_Water_Temp"
+    type: INT16
+    function_code: 3
+    scale: 0.1
+    bacnet_type: AI
+    units: "degreesCelsius"
+    description: "Leaving Chilled Water Temperature"
+
+  - address: 102
+    name: "Setpoint_Temp"
+    type: INT16
+    function_code: 3
+    scale: 0.1
+    bacnet_type: AI
+    units: "degreesCelsius"
+    description: "Chilled Water Setpoint"
+
+  - address: 103
+    name: "Outdoor_Air_Temp"
+    type: INT16
+    function_code: 3
+    scale: 0.1
+    bacnet_type: AI
+    units: "degreesCelsius"
+    description: "Outdoor Air Temperature"
+
+  - address: 110
+    name: "Total_kW"
+    type: INT16
+    function_code: 3
+    scale: 0.1
+    bacnet_type: AI
+    units: "kilowatts"
+    description: "Total Power Consumption"
+
+  - address: 111
+    name: "Percent_RLA"
+    type: INT16
+    function_code: 3
+    scale: 0.1
+    bacnet_type: AI
+    units: "percent"
+    description: "Percent of Rated Load Amps"
+
+  - address: 112
+    name: "COP"
+    type: INT16
+    function_code: 3
+    scale: 0.01
+    bacnet_type: AI
+    units: "noUnits"
+    description: "Coefficient of Performance"
+
+  - address: 113
+    name: "Cooling_Capacity_kW"
+    type: INT16
+    function_code: 3
+    scale: 0.1
+    bacnet_type: AI
+    units: "kilowatts"
+    description: "Current Cooling Capacity"
+
+  - address: 120
+    name: "Compressor_1_Status"
+    type: INT16
+    function_code: 3
+    scale: 1.0
+    bacnet_type: BI
+    units: "noUnits"
+    description: "Compressor 1 Running (1=On)"
+
+  - address: 121
+    name: "Compressor_2_Status"
+    type: INT16
+    function_code: 3
+    scale: 1.0
+    bacnet_type: BI
+    units: "noUnits"
+    description: "Compressor 2 Running (1=On)"
+
+  - address: 130
+    name: "Chiller_Enable"
+    type: INT16
+    function_code: 3
+    scale: 1.0
+    bacnet_type: BI
+    units: "noUnits"
+    description: "Chiller Enabled (1=Enabled)"
+
+  - address: 131
+    name: "Alarm_Active"
+    type: INT16
+    function_code: 3
+    scale: 1.0
+    bacnet_type: BI
+    units: "noUnits"
+    description: "Active Alarm Present"
+
+  - address: 132
+    name: "Alarm_Code"
+    type: INT16
+    function_code: 3
+    scale: 1.0
+    bacnet_type: AI
+    units: "noUnits"
+    description: "Active Alarm Code"
+
+  - address: 200
+    name: "CHW_Setpoint_Cmd"
+    type: INT16
+    function_code: 6
+    scale: 0.1
+    bacnet_type: AV
+    units: "degreesCelsius"
+    description: "Chilled Water Setpoint Command"
+    writable: true

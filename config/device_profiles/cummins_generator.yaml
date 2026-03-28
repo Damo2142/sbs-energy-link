@@ -1,0 +1,154 @@
+# Cummins Generator — Modbus Register Profile
+# Cummins PowerCommand (PCC) controller via Modbus TCP.
+
+name: "Cummins Generator"
+manufacturer: "Cummins"
+model: "PowerCommand PCC"
+protocol: "Modbus TCP"
+default_port: 502
+default_unit_id: 1
+
+registers:
+  - address: 1536
+    name: "Gen_kW"
+    type: INT16
+    function_code: 3
+    scale: 1.0
+    bacnet_type: AI
+    units: "kilowatts"
+    description: "Generator Real Power Output"
+
+  - address: 1537
+    name: "Gen_kVAR"
+    type: INT16
+    function_code: 3
+    scale: 1.0
+    bacnet_type: AI
+    units: "kilovoltAmperesReactive"
+    description: "Generator Reactive Power"
+
+  - address: 1538
+    name: "Gen_kVA"
+    type: INT16
+    function_code: 3
+    scale: 1.0
+    bacnet_type: AI
+    units: "kilovoltAmperes"
+    description: "Generator Apparent Power"
+
+  - address: 1539
+    name: "Gen_Power_Factor"
+    type: INT16
+    function_code: 3
+    scale: 0.01
+    bacnet_type: AI
+    units: "noUnits"
+    description: "Generator Power Factor"
+
+  - address: 1540
+    name: "Gen_Frequency_Hz"
+    type: INT16
+    function_code: 3
+    scale: 0.1
+    bacnet_type: AI
+    units: "hertz"
+    description: "Generator Frequency"
+
+  - address: 1541
+    name: "Gen_Voltage_AB"
+    type: INT16
+    function_code: 3
+    scale: 1.0
+    bacnet_type: AI
+    units: "volts"
+    description: "Generator Voltage A-B"
+
+  - address: 1542
+    name: "Gen_Voltage_BC"
+    type: INT16
+    function_code: 3
+    scale: 1.0
+    bacnet_type: AI
+    units: "volts"
+    description: "Generator Voltage B-C"
+
+  - address: 1543
+    name: "Gen_Voltage_CA"
+    type: INT16
+    function_code: 3
+    scale: 1.0
+    bacnet_type: AI
+    units: "volts"
+    description: "Generator Voltage C-A"
+
+  - address: 1544
+    name: "Gen_Current_A"
+    type: INT16
+    function_code: 3
+    scale: 1.0
+    bacnet_type: AI
+    units: "amperes"
+    description: "Generator Current Phase A"
+
+  - address: 1280
+    name: "Engine_Running"
+    type: INT16
+    function_code: 3
+    scale: 1.0
+    bacnet_type: BI
+    units: "noUnits"
+    description: "Engine Running Status (1=Running)"
+
+  - address: 1281
+    name: "Gen_Available"
+    type: INT16
+    function_code: 3
+    scale: 1.0
+    bacnet_type: BI
+    units: "noUnits"
+    description: "Generator Available"
+
+  - address: 1282
+    name: "Fault_Active"
+    type: INT16
+    function_code: 3
+    scale: 1.0
+    bacnet_type: BI
+    units: "noUnits"
+    description: "Active Fault Present"
+
+  - address: 1283
+    name: "Warning_Active"
+    type: INT16
+    function_code: 3
+    scale: 1.0
+    bacnet_type: BI
+    units: "noUnits"
+    description: "Active Warning Present"
+
+  - address: 1025
+    name: "Engine_Coolant_Temp"
+    type: INT16
+    function_code: 3
+    scale: 0.1
+    bacnet_type: AI
+    units: "degreesCelsius"
+    description: "Engine Coolant Temperature"
+
+  - address: 1026
+    name: "Engine_Oil_Pressure"
+    type: INT16
+    function_code: 3
+    scale: 0.1
+    bacnet_type: AI
+    units: "kilopascals"
+    description: "Engine Oil Pressure"
+
+  - address: 1028
+    name: "Engine_Run_Hours"
+    type: INT32
+    function_code: 3
+    scale: 0.1
+    bacnet_type: AI
+    units: "hours"
+    description: "Total Engine Run Hours"

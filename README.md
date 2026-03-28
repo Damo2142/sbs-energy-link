@@ -54,14 +54,16 @@ Connect 4 via PiBridge.
 | DIN enclosure + 24V PSU + terminal blocks | ~$290 |
 | **Total hardware BOM** | **~$885** |
 
-**Two SKUs:**
+**Three product tiers** (identical hardware, software license differentiates):
 
-| SKU | Contents | Sell Price |
-|-----|----------|------------|
-| EnergyLink Base | Connect 4 only, 23 BESS points | ~$3,000 |
-| EnergyLink Complete | Connect 4 + DI module, 23 BESS + 14 DI points | ~$3,200 |
+| Part Number | Tier | Features | Sell Price |
+|-------------|------|----------|------------|
+| SBS-EL-BESS-001 | BESS | Tesla Megapack only, locked register map | ~$2,800 |
+| SBS-EL-UNIV-001 | Universal | Any Modbus device, profile selector, register builder | ~$3,200 |
+| SBS-EL-PRO-001 | Pro | Universal + Excel/CSV import with column mapping | ~$3,800 |
 
-Assembly and commissioning: ~2.5 hours per unit.
+All tiers include RevPi Connect 4 + DI module (DI board is standard in every
+unit). Assembly and commissioning: ~2.5 hours per unit.
 
 ---
 
@@ -114,11 +116,19 @@ sbs-energylink/
 │   ├── data_store.py            ← Thread-safe shared state (BESSData dataclass)
 │   ├── revpi_di.py              ← RevPi DI module reader (14x 24VDC inputs via revpimodio2)
 │   ├── mstp_router.py           ← Manages bacnet-stack router-mstp C subprocess
+│   ├── license.py               ← License/tier system (BESS/Universal/Pro)
+│   ├── profiles.py              ← Device profile loader (config/device_profiles/*.yaml)
 │   └── web_ui.py                ← Flask: 5-step wizard + dashboard + REST APIs
 │
 ├── config/
 │   ├── config.yaml              ← Active site config (written by wizard)
-│   └── config.template.yaml     ← Factory defaults with all sections documented
+│   ├── config.template.yaml     ← Factory defaults with all sections documented
+│   └── device_profiles/         ← Modbus register profiles (drop-in YAML)
+│       ├── tesla_bess.yaml      ← Tesla Megapack / EPMS
+│       ├── shark_200_meter.yaml ← Electro Industries Shark 200
+│       ├── sma_solar_inverter.yaml ← SMA solar inverter
+│       ├── cummins_generator.yaml  ← Cummins generator
+│       └── carrier_chiller.yaml    ← Carrier chiller
 │
 ├── templates/
 │   ├── step1.html               ← Site info: name, unit ID, engineer, date

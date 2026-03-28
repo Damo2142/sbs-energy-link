@@ -81,20 +81,28 @@ dev defaults handle the rest.
 sbs-energylink/
 ├── CLAUDE.md                    ← You are here
 ├── README.md
-├── requirements.txt             ← pymodbus, bacpypes3, flask, PyYAML, schedule, revpimodio2
+├── requirements.txt             ← pymodbus, bacpypes3, flask, PyYAML, schedule, openpyxl
 │
 ├── src/
-│   ├── main.py                  ← Entry point — threads: poller, BACnet, DI, web UI
+│   ├── main.py                  ← Entry point — threads: poller, DI, BACnet, MSTP, web UI
 │   ├── poller.py                ← Modbus TCP reader (Tesla EPMS registers)
 │   ├── bacnet_server.py         ← bacpypes3 BACnet/IP server, 23 BESS + up to 14 DI objects
 │   ├── data_store.py            ← Thread-safe shared state (BESSData dataclass)
 │   ├── revpi_di.py              ← RevPi DI module reader (14x 24VDC inputs)
 │   ├── mstp_router.py           ← Manages bacnet-stack router-mstp subprocess
+│   ├── license.py               ← License/tier system (BESS/Universal/Pro)
+│   ├── profiles.py              ← Device profile loader (config/device_profiles/*.yaml)
 │   └── web_ui.py                ← Flask: 5-step wizard + dashboard + APIs
 │
 ├── config/
 │   ├── config.yaml              ← Active site config (written by wizard)
-│   └── config.template.yaml     ← Factory defaults
+│   ├── config.template.yaml     ← Factory defaults
+│   └── device_profiles/         ← Modbus register profiles (drop-in YAML)
+│       ├── tesla_bess.yaml      ← Tesla Megapack / EPMS (23 registers)
+│       ├── shark_200_meter.yaml ← Electro Industries Shark 200 power meter
+│       ├── sma_solar_inverter.yaml ← SMA Sunny Boy / Tripower
+│       ├── cummins_generator.yaml  ← Cummins PowerCommand
+│       └── carrier_chiller.yaml    ← Carrier 30XA / 30RB
 │
 ├── templates/
 │   ├── step1.html               ← Site info: name, unit ID, engineer, date
@@ -396,46 +404,41 @@ last_error fields.
 
 ## Current Working State (2026-03-28)
 
-**Core product is feature-complete for initial RevPi testing.** All
-remaining items are wizard UI polish and hardware validation.
+**Software feature-complete.** All three tiers implemented, wizard fully
+functional, all API endpoints working. Remaining items are hardware
+validation on real RevPi.
 
 **Working:**
-- [x] BACnet/IP server — binds on dev (192.168.0.26:47808), all 23 BESS
-      objects created, Who-Is/I-Am/ReadProperty verified working
+- [x] BACnet/IP server — all 23 BESS objects + DI BI:7-20
+- [x] BACnet MSTP — bacnet-stack router-mstp C subprocess manager
+- [x] RevPi DI module — 14 channels, NO/NC inversion, DEV_MODE simulation
 - [x] Simulation mode — realistic cycling BESS data via `--sim`
-- [x] Flask wizard — all 5 steps render, POST/redirect works, config saves
+- [x] Flask wizard — all 5 steps with DI config table and MSTP section
+- [x] Step 3 DI table — 14 rows, enable/name/desc/NO-NC/alarm, live sim dots
+- [x] Step 3 MSTP section — enable toggle, MAC, baud dropdown, network number
 - [x] Dashboard — live auto-refresh of all points (BESS + DI)
-- [x] All API endpoints return valid JSON, zero 500 errors
-- [x] DEV_MODE — auto-detect interface IP, mock Modbus, dev_network_setup.sh
-      for alias IP apply flow, MSTP skipped cleanly
-- [x] RevPi DI module (`src/revpi_di.py`) — 14 channels via revpimodio2,
-      DEV_MODE simulates with ~10% random toggling, NO/NC inversion via
-      `is_active`, config-driven enable, BI:7-20 created in BACnet server,
-      di_reader thread starts before BACnet in main.py
-- [x] BACnet MSTP (`src/mstp_router.py`) — bacnet-stack router-mstp C
-      binary bridges BACnet/IP (network 1, eth1) ↔ MSTP (network 2,
-      /dev/ttyRS485). MSTProuter manages subprocess with exponential backoff
-      restart. Build script at `scripts/build_mstp_router.sh`. DEV_MODE
-      skips (no RS485 on dev). Config template has full `mstp:` section.
-      `/api/status` includes MSTP status (enabled, running, mac, baud,
-      binary_installed, serial_port_exists, last_error)
+- [x] License system — three tiers (BESS/Universal/Pro), part numbers,
+      license.key file, first_boot.sh provisioning, DEV_MODE defaults to PRO
+- [x] Device profiles — 5 built-in YAML profiles (Tesla, Shark, SMA, Cummins,
+      Carrier), drop-in auto-discovery from config/device_profiles/
+- [x] API: `/api/profiles`, `/api/profile/<file>`, `/api/test_register`,
+      `/api/import_registers`, `/api/di_status`
+- [x] Excel/CSV import (Pro tier) — upload, column detect, mapping, import
+- [x] Test register (Universal+) — live single-register read with raw+scaled
+- [x] DEV_MODE — auto-detect IP, mock Modbus, sim DI, skip MSTP, PRO tier
+- [x] first_boot.sh — license provisioning, MSTP binary build, full setup
 
-**TODO (UI polish + hardware validation):**
-- [ ] Step 3 template — DI input configuration table UI (14 rows: name,
-      description, normal state open/closed, alarm on fault flag)
-- [ ] Step 3 template — MSTP settings section (enable toggle, baud, MAC,
-      max master) — all config plumbing done, just needs the HTML form
+**TODO (hardware validation only):**
 - [ ] Build and test router-mstp on real RevPi hardware with RS485
 - [ ] Netplan apply — needs testing on real RevPi hardware
 - [ ] YABE discovery on Proxmox — likely needs bridge mode on VM NIC
-      (not NAT), investigate and document
-- [ ] Production first_boot.sh — update for RevPi hardware detection,
-      include build_mstp_router.sh in provisioning
 - [ ] systemd service file needs update for new config structure
 - [ ] Write unit tests (test_energylink.py exists but needs content)
 - [ ] Watchdog — restart poller if stale > 5 minutes
 - [ ] Build image script (`scripts/build_image.sh`)
 - [ ] Integrator setup sheet PDF generation
+- [ ] Universal tier: wire profile-based poller to replace hardcoded register map
+- [ ] Universal tier: manual register builder UI in Step 2
 
 ---
 
@@ -455,7 +458,10 @@ remaining items are wizard UI polish and hardware validation.
 8. **Dashboard is a fallback** — primary data display is the integrator's BAS.
 9. **DEV_MODE detects real interface** — bacpypes3 needs a real IP, not 0.0.0.0.
 10. **Simulation mode always works** — `--sim` flag for dev without hardware.
-11. **Two SKUs** — Base (no DI, ~$2,500) and Complete (with DI, ~$3,200).
+11. **Three software tiers** — BESS ($2,800), Universal ($3,200), Pro ($3,800).
+    Identical hardware, software license differentiates. License file set at first boot.
+12. **DI board is standard** — RevPi DI module included in every unit, not optional.
+13. **Drop-in device profiles** — YAML files in config/device_profiles/, auto-discovered.
 
 ---
 
@@ -482,7 +488,19 @@ Build MSTP router: `sudo bash scripts/build_mstp_router.sh`.
 
 ---
 
-## Pricing
+## Product Tiers
+
+Three software tiers, all on identical hardware (RevPi Connect 4 + DI module).
+Tier is set by license file at `/etc/sbs-energylink/license.key`, written
+during `first_boot.sh` provisioning.
+
+| Part Number | Tier | Features | Sell Price |
+|-------------|------|----------|------------|
+| SBS-EL-BESS-001 | BESS | Tesla Megapack only, locked register map, 23+14 points | ~$2,800 |
+| SBS-EL-UNIV-001 | Universal | Any Modbus device, profile selector, manual register builder, test register | ~$3,200 |
+| SBS-EL-PRO-001 | Pro | Everything in Universal + Excel/CSV import, column mapping wizard | ~$3,800 |
+
+**Hardware BOM (identical all tiers):**
 
 | Component | Cost |
 |-----------|------|
@@ -490,20 +508,70 @@ Build MSTP router: `sudo bash scripts/build_mstp_router.sh`.
 | RevPi DI module (Item 100195) | ~$160 |
 | DIN enclosure + 24V PSU + terminal blocks | ~$290 |
 | **Hardware total** | **~$885** |
-| Assembly + commissioning (2.5 hours) | included in sell price |
 
-| SKU | Contents | Sell Price |
-|-----|----------|------------|
-| EnergyLink Base | Connect 4 only, 23 BESS points | ~$2,500 |
-| EnergyLink Complete | Connect 4 + DI module, 23 BESS + 14 DI points | ~$3,000-3,200 |
+**Software license fee:** BESS ~$500, Universal ~$750, Pro ~$1,000.
+Assembly + commissioning ~2.5 hours, included in sell price.
+
+### License System
+
+License file at `/etc/sbs-energylink/license.key`:
+```
+PRODUCT=SBS-EL-UNIV-001
+SERIAL=SBS-EL-0042
+TIER=universal
+ISSUED=2026-03-28
+SITE=
+```
+
+- `first_boot.sh` prompts for part number and serial, writes the file
+- `main.py` reads license on startup, sets tier automatically
+- DEV_MODE with no license defaults to PRO (all features available)
+- Missing license in production defaults to BESS (safe default)
+- `/api/status` includes `license` object with part_number, serial, tier, valid
+
+### Device Profiles
+
+YAML files in `config/device_profiles/` — drop a new file in and it appears
+in the wizard selector automatically. No code changes needed.
+
+**Profile format:**
+```yaml
+name: "Device Name"
+manufacturer: "Manufacturer"
+model: "Model Number"
+protocol: "Modbus TCP"
+default_port: 502
+default_unit_id: 1
+
+registers:
+  - address: 200
+    name: "Point_Name"
+    type: INT16          # INT16, INT32, FLOAT, COIL
+    function_code: 4     # 3=holding, 4=input
+    scale: 1.0           # multiply raw value
+    bacnet_type: AI       # AI, BI, AV, BV
+    units: "kilowatts"   # BACnet engineering units
+    description: "Human readable description"
+    writable: false       # true for command points
+```
+
+### API Endpoints (Tier-Gated)
+
+| Endpoint | Method | Tier | Purpose |
+|----------|--------|------|---------|
+| `/api/profiles` | GET | All | List available device profiles |
+| `/api/profile/<file>` | GET | All | Load specific profile with registers |
+| `/api/test_register` | POST | Universal+ | Read single register live, show raw + scaled |
+| `/api/import_registers` | POST | Pro | Upload .xlsx/.csv, detect columns, map and import |
+| `/api/di_status` | GET | All | Live DI input states (for wizard sim display) |
 
 ---
 
 ## Physical Install Sequence
 
 1. Mount DIN rail enclosure in electrical panel, connect 24VDC power
-2. Snap RevPi DI module onto Connect 4 via PiBridge (Complete SKU only)
-3. Wire 24VDC field contacts to DI terminal blocks (Complete SKU only)
+2. Snap RevPi DI module onto Connect 4 via PiBridge (standard in all units)
+3. Wire 24VDC field contacts to DI terminal blocks
 4. Plug laptop into either Ethernet port (DHCP)
 5. Open browser to setup wizard
 6. Step 1: Enter site info
