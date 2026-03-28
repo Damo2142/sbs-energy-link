@@ -7,6 +7,7 @@ model: "Sunny Boy / Sunny Tripower"
 protocol: "Modbus TCP"
 default_port: 502
 default_unit_id: 3
+rtu_default_baud: 9600
 
 registers:
   - address: 30775

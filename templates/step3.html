@@ -122,17 +122,74 @@
       </table>
 
       <hr class="divider">
-      <div class="section-label">&#128268; BACnet MSTP &mdash; RS485</div>
+      <div class="section-label">&#128268; RS485 Port &mdash; /dev/ttyRS485</div>
       <div class="info-box">
-        Enable MSTP to serve the same BACnet points on the RS485 trunk simultaneously with BACnet/IP.
-        Uses the RevPi onboard RS485 port (/dev/ttyRS485). Requires the router-mstp binary.
+        The RS485 port can be used for <strong>Modbus RTU</strong> (read additional serial devices)
+        or <strong>BACnet MSTP</strong> (serve BACnet points to legacy BAS on RS485 trunk).
+        Only one mode can be active at a time.
       </div>
-      <div class="toggle-row">
-        <input type="checkbox" name="mstp_enabled" id="mstp_enabled" style="width:auto"
-               {% if cfg.get('mstp', {}).get('enabled') %}checked{% endif %} onchange="toggleMSTP()">
-        <label for="mstp_enabled" class="toggle-label">Enable MSTP routing</label>
+      <div class="form-group">
+        <label>RS485 Mode</label>
+        <select name="rs485_mode" id="rs485_mode" onchange="toggleRS485()">
+          {% set rs485_mode = cfg.get('rs485', {}).get('mode', 'disabled') %}
+          <option value="disabled" {% if rs485_mode == 'disabled' %}selected{% endif %}>Disabled</option>
+          <option value="modbus_rtu" {% if rs485_mode == 'modbus_rtu' %}selected{% endif %}>Modbus RTU Client</option>
+          <option value="bacnet_mstp" {% if rs485_mode == 'bacnet_mstp' %}selected{% endif %}>BACnet MSTP</option>
+        </select>
       </div>
+
+      <!-- Modbus RTU fields -->
+      <div id="rtu-fields" style="display:none">
+        <div class="info-box">
+          Add Modbus RTU devices on the RS485 trunk. Each device needs a unique address and a device profile.
+          Points from RTU devices appear as additional BACnet objects in Device 9001.
+        </div>
+        <div class="row">
+          <div class="form-group">
+            <label>RTU Baud Rate</label>
+            <select name="rtu_baud">
+              {% set rtu_baud = cfg.get('rs485', {}).get('baud', 9600) %}
+              <option value="9600" {% if rtu_baud == 9600 %}selected{% endif %}>9600</option>
+              <option value="19200" {% if rtu_baud == 19200 %}selected{% endif %}>19200</option>
+              <option value="38400" {% if rtu_baud == 38400 %}selected{% endif %}>38400</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Parity</label>
+            <select name="rtu_parity">
+              {% set rtu_parity = cfg.get('rs485', {}).get('parity', 'N') %}
+              <option value="N" {% if rtu_parity == 'N' %}selected{% endif %}>None</option>
+              <option value="E" {% if rtu_parity == 'E' %}selected{% endif %}>Even</option>
+              <option value="O" {% if rtu_parity == 'O' %}selected{% endif %}>Odd</option>
+            </select>
+          </div>
+        </div>
+        <div class="hint" style="margin-bottom:14px">RTU devices (up to 32 on one trunk):</div>
+        <table class="di-table">
+          <thead><tr><th style="width:30px">#</th><th style="width:80px">Address</th><th>Profile</th></tr></thead>
+          <tbody>
+          {% for i in range(4) %}
+          {% set rtu_dev = cfg.get('rtu_devices', [])[i] if i < cfg.get('rtu_devices', [])|length else {} %}
+          <tr>
+            <td style="color:#8B949E">{{ i + 1 }}</td>
+            <td><input type="number" name="rtu_{{ i }}_addr" min="1" max="247" value="{{ rtu_dev.get('address', '') }}" placeholder="1-247"></td>
+            <td>
+              <select name="rtu_{{ i }}_profile" class="rtu-profile-sel">
+                <option value="">-- None --</option>
+              </select>
+            </td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- BACnet MSTP fields -->
       <div id="mstp-fields" style="display:none">
+        <div class="info-box">
+          MSTP serves the same BACnet points on the RS485 trunk simultaneously with BACnet/IP.
+          Requires the router-mstp binary (built during first_boot.sh).
+        </div>
         <div class="row">
           <div class="form-group">
             <label>MSTP MAC Address (0-127)</label>
@@ -171,10 +228,25 @@ function testBACnet(){
     else{el.className="result err";el.textContent="\u2717 "+(d.error||"BACnet not active");}
   }).catch(function(e){el.className="result err";el.textContent="\u2717 Error: "+e;});
 }
-function toggleMSTP(){
-  document.getElementById("mstp-fields").style.display=document.getElementById("mstp_enabled").checked?"block":"none";
+function toggleRS485(){
+  var mode=document.getElementById("rs485_mode").value;
+  document.getElementById("rtu-fields").style.display=mode==="modbus_rtu"?"block":"none";
+  document.getElementById("mstp-fields").style.display=mode==="bacnet_mstp"?"block":"none";
 }
-toggleMSTP();
+toggleRS485();
+
+// Load profiles into RTU device dropdowns
+fetch("/api/profiles").then(r=>r.json()).then(function(d){
+  document.querySelectorAll(".rtu-profile-sel").forEach(function(sel){
+    var cur=sel.getAttribute("data-current")||"";
+    d.profiles.forEach(function(p){
+      var opt=document.createElement("option");
+      opt.value=p.file;opt.textContent=p.name+" ("+p.register_count+")";
+      if(p.file===cur)opt.selected=true;
+      sel.appendChild(opt);
+    });
+  });
+});
 {% if dev_mode %}
 setInterval(function(){
   fetch("/api/di_status").then(r=>r.json()).then(function(d){

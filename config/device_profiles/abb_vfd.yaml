@@ -1,0 +1,138 @@
+# ABB Variable Frequency Drive — Modbus Register Profile
+# ABB ACS580 / ACS880 via Modbus RTU or TCP.
+
+name: "ABB Variable Frequency Drive"
+manufacturer: "ABB"
+model: "ACS580 / ACS880"
+protocol: "Modbus RTU/TCP"
+default_port: 502
+default_unit_id: 1
+rtu_default_baud: 9600
+
+registers:
+  - address: 1
+    name: "Output_Frequency_Hz"
+    type: INT16
+    function_code: 3
+    scale: 0.1
+    bacnet_type: AI
+    units: "hertz"
+    description: "Output Frequency"
+
+  - address: 2
+    name: "Motor_Speed_RPM"
+    type: INT16
+    function_code: 3
+    scale: 1.0
+    bacnet_type: AI
+    units: "revolutionsPerMinute"
+    description: "Motor Speed"
+
+  - address: 3
+    name: "Motor_Current_A"
+    type: INT16
+    function_code: 3
+    scale: 0.1
+    bacnet_type: AI
+    units: "amperes"
+    description: "Motor Current"
+
+  - address: 4
+    name: "Motor_Torque_Pct"
+    type: INT16
+    function_code: 3
+    scale: 0.1
+    bacnet_type: AI
+    units: "percent"
+    description: "Motor Torque Percentage"
+
+  - address: 5
+    name: "Motor_Power_kW"
+    type: INT16
+    function_code: 3
+    scale: 0.1
+    bacnet_type: AI
+    units: "kilowatts"
+    description: "Motor Power"
+
+  - address: 6
+    name: "DC_Bus_Voltage_V"
+    type: INT16
+    function_code: 3
+    scale: 0.1
+    bacnet_type: AI
+    units: "volts"
+    description: "DC Bus Voltage"
+
+  - address: 7
+    name: "Output_Voltage_V"
+    type: INT16
+    function_code: 3
+    scale: 0.1
+    bacnet_type: AI
+    units: "volts"
+    description: "Output Voltage"
+
+  - address: 8
+    name: "Drive_Temp_C"
+    type: INT16
+    function_code: 3
+    scale: 0.1
+    bacnet_type: AI
+    units: "degreesCelsius"
+    description: "Drive Temperature"
+
+  - address: 9
+    name: "Run_Hours"
+    type: INT32
+    function_code: 3
+    scale: 1.0
+    bacnet_type: AI
+    units: "hours"
+    description: "Total Run Hours"
+
+  - address: 100
+    name: "Drive_Running"
+    type: INT16
+    function_code: 3
+    scale: 1.0
+    bacnet_type: BI
+    units: "noUnits"
+    description: "Drive Running Status"
+
+  - address: 101
+    name: "Drive_Ready"
+    type: INT16
+    function_code: 3
+    scale: 1.0
+    bacnet_type: BI
+    units: "noUnits"
+    description: "Drive Ready"
+
+  - address: 102
+    name: "Fault_Active"
+    type: INT16
+    function_code: 3
+    scale: 1.0
+    bacnet_type: BI
+    units: "noUnits"
+    description: "Active Fault"
+
+  - address: 103
+    name: "Warning_Active"
+    type: INT16
+    function_code: 3
+    scale: 1.0
+    bacnet_type: BI
+    units: "noUnits"
+    description: "Active Warning"
+
+  - address: 1
+    name: "Speed_Reference_Pct"
+    type: INT16
+    function_code: 6
+    scale: 0.1
+    bacnet_type: AV
+    units: "percent"
+    description: "Speed Reference Command"
+    writable: true

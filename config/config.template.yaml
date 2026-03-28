@@ -35,17 +35,34 @@ bacnet:
   network_mask: "24"
   bind_interface: "eth1"
 
-# ── BACnet MSTP (RS485) ──────────────────────────────────────────
-# Requires router-mstp binary from bacnet-stack.
-# Build with: sudo bash scripts/build_mstp_router.sh
-mstp:
-  enabled: false                  # Set true to start MSTP router
+# ── RS485 Port ─────────────────────────────────────────────────
+# Three modes: "disabled", "modbus_rtu", "bacnet_mstp"
+# Only one mode can be active — RS485 is a shared physical port.
+rs485:
+  mode: "disabled"                # "disabled", "modbus_rtu", or "bacnet_mstp"
   port: "/dev/ttyRS485"           # RevPi onboard RS485
-  baud: 38400                     # Standard BACnet MSTP baud rate
-  mac: 127                        # MSTP MAC address (0-127)
-  max_master: 127                 # Highest MAC on the MSTP trunk
-  ip_network: 1                   # BACnet network number for IP side
-  mstp_network: 2                 # BACnet network number for MSTP side
+
+# ── BACnet MSTP (when rs485.mode = bacnet_mstp) ────────────────
+# Requires router-mstp binary from bacnet-stack.
+mstp:
+  enabled: false                  # Auto-set when rs485.mode = bacnet_mstp
+  port: "/dev/ttyRS485"
+  baud: 38400
+  mac: 127
+  max_master: 127
+  ip_network: 1
+  mstp_network: 2
+
+# ── Modbus RTU Devices (when rs485.mode = modbus_rtu) ──────────
+# Each device has a Modbus address and a profile from device_profiles/
+rtu_devices: []
+#  - address: 1
+#    profile: "shark_200_meter.yaml"
+#    device_id: 0                  # 0 = merge into Device 9001
+#  - address: 2
+#    profile: "abb_vfd.yaml"
+#    device_id: 0
+rtu_poll_interval_seconds: 10
 
 # ── Polling ────────────────────────────────────────────────────
 poll_interval_seconds: 30

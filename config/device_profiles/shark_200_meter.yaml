@@ -7,6 +7,7 @@ model: "Shark 200"
 protocol: "Modbus TCP"
 default_port: 502
 default_unit_id: 1
+rtu_default_baud: 9600
 
 registers:
   - address: 999

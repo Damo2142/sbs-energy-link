@@ -1,0 +1,101 @@
+# Honeywell Gas Meter — Modbus Register Profile
+# Honeywell Elster TRZ / ERX gas volume corrector via Modbus RTU.
+
+name: "Honeywell Gas Meter"
+manufacturer: "Honeywell / Elster"
+model: "TRZ / ERX Volume Corrector"
+protocol: "Modbus RTU"
+default_port: 502
+default_unit_id: 1
+rtu_default_baud: 9600
+
+registers:
+  - address: 0
+    name: "Corrected_Volume_m3"
+    type: INT32
+    function_code: 4
+    scale: 0.01
+    bacnet_type: AI
+    units: "cubicMeters"
+    description: "Total Corrected Volume"
+
+  - address: 2
+    name: "Uncorrected_Volume_m3"
+    type: INT32
+    function_code: 4
+    scale: 0.01
+    bacnet_type: AI
+    units: "cubicMeters"
+    description: "Total Uncorrected Volume"
+
+  - address: 4
+    name: "Flow_Rate_m3h"
+    type: INT16
+    function_code: 4
+    scale: 0.1
+    bacnet_type: AI
+    units: "cubicMetersPerHour"
+    description: "Current Flow Rate"
+
+  - address: 5
+    name: "Gas_Pressure_kPa"
+    type: INT16
+    function_code: 4
+    scale: 0.1
+    bacnet_type: AI
+    units: "kilopascals"
+    description: "Gas Line Pressure"
+
+  - address: 6
+    name: "Gas_Temperature_C"
+    type: INT16
+    function_code: 4
+    scale: 0.1
+    bacnet_type: AI
+    units: "degreesCelsius"
+    description: "Gas Temperature"
+
+  - address: 7
+    name: "Correction_Factor"
+    type: INT16
+    function_code: 4
+    scale: 0.001
+    bacnet_type: AI
+    units: "noUnits"
+    description: "Volume Correction Factor (P*T)"
+
+  - address: 8
+    name: "Battery_Voltage_V"
+    type: INT16
+    function_code: 4
+    scale: 0.01
+    bacnet_type: AI
+    units: "volts"
+    description: "Battery Voltage"
+
+  - address: 10
+    name: "Alarm_Active"
+    type: INT16
+    function_code: 4
+    scale: 1.0
+    bacnet_type: BI
+    units: "noUnits"
+    description: "Alarm Active"
+
+  - address: 11
+    name: "Low_Battery"
+    type: INT16
+    function_code: 4
+    scale: 1.0
+    bacnet_type: BI
+    units: "noUnits"
+    description: "Low Battery Warning"
+
+  - address: 12
+    name: "Tamper_Detected"
+    type: INT16
+    function_code: 4
+    scale: 1.0
+    bacnet_type: BI
+    units: "noUnits"
+    description: "Tamper Detected"

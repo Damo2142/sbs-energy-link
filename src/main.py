@@ -29,6 +29,7 @@ from poller import ModbusPoller
 from bacnet_server import BACnetServer
 from revpi_di import RevPiDIReader
 from mstp_router import MSTProuter
+from rtu_poller import RTUPoller
 from license import load_license
 from web_ui import run_webui
 
@@ -188,7 +189,15 @@ def main():
     threads.append(t2)
     t2.start()
 
-    # --- MSTP Router (bacnet-stack router-mstp process) ---
+    # --- RS485: MSTP Router OR RTU Poller (mutually exclusive) ---
+    rs485_mode = config.get("rs485", {}).get("mode", "disabled")
+
+    # Auto-sync mstp.enabled from rs485.mode
+    if rs485_mode == "bacnet_mstp":
+        config.setdefault("mstp", {})["enabled"] = True
+    else:
+        config.setdefault("mstp", {})["enabled"] = False
+
     mstp = MSTProuter(config)
     t_mstp = threading.Thread(
         target=mstp.run,
@@ -198,10 +207,19 @@ def main():
     threads.append(t_mstp)
     t_mstp.start()
 
+    rtu = RTUPoller(config)
+    t_rtu = threading.Thread(
+        target=rtu.run,
+        name="rtu-poller",
+        daemon=True
+    )
+    threads.append(t_rtu)
+    t_rtu.start()
+
     # --- Commissioning Web UI ---
     t3 = threading.Thread(
         target=run_webui,
-        args=(config, mstp, di_reader),
+        args=(config, mstp, di_reader, rtu),
         name="web-ui",
         daemon=True
     )
@@ -214,6 +232,7 @@ def main():
         if not args.sim:
             poller.stop()
         di_reader.stop()
+        rtu.stop()
         mstp.stop()
         bacnet.stop()
         sys.exit(0)

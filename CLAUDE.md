@@ -56,7 +56,8 @@ DEV_MODE defaults to PRO tier with all features available.
 │                                                  │
 │  eth0 ◄──── EPMS / Tesla network (Modbus TCP)   │
 │  eth1 ────► BAS / building network (BACnet/IP)   │
-│  RS485 ───► BACnet MSTP trunk (via router-mstp)   │
+│  RS485 ───► Modbus RTU (read serial devices)       │
+│         OR► BACnet MSTP (serve to legacy BAS)      │
 │                                                  │
 │  PiBridge ◄── RevPi DI (14x 24VDC inputs)       │
 └─────────────────────────────────────────────────┘
@@ -66,9 +67,12 @@ DEV_MODE defaults to PRO tier with all features available.
   DHCP or static IP, configured in wizard Step 2.
 - **eth1:** Faces customer BAS network. BACnet/IP server on UDP 47808.
   Static IP, configured in wizard Step 3.
-- **RS485:** `/dev/ttyRS485` with switchable 120 ohm termination. BACnet MSTP
-  via bacnet-stack `router-mstp` C binary. Same points available on both
-  BACnet/IP and MSTP simultaneously. Configured in wizard Step 3.
+- **RS485:** `/dev/ttyRS485` with switchable 120 ohm termination. Three modes
+  (configured in wizard Step 3):
+  - **Disabled** — RS485 port not used
+  - **Modbus RTU Client** — read up to 32 serial devices on the trunk, each
+    with its own address and device profile. Points added to BACnet server.
+  - **BACnet MSTP** — serve BACnet points to legacy BAS via router-mstp C binary
 
 ---
 
@@ -87,6 +91,7 @@ sbs-energylink/
 │   ├── data_store.py            ← Thread-safe shared state (BESSData dataclass)
 │   ├── revpi_di.py              ← RevPi DI module reader (14x 24VDC inputs)
 │   ├── mstp_router.py           ← Manages bacnet-stack router-mstp subprocess
+│   ├── rtu_poller.py            ← Modbus RTU client for RS485 serial devices
 │   ├── license.py               ← License/tier system (BESS/Universal/Pro)
 │   ├── profiles.py              ← Device profile loader (config/device_profiles/*.yaml)
 │   └── web_ui.py                ← Flask: 5-step wizard + dashboard + APIs
@@ -99,7 +104,9 @@ sbs-energylink/
 │       ├── shark_200_meter.yaml ← Electro Industries Shark 200 power meter
 │       ├── sma_solar_inverter.yaml ← SMA Sunny Boy / Tripower
 │       ├── cummins_generator.yaml  ← Cummins PowerCommand
-│       └── carrier_chiller.yaml    ← Carrier 30XA / 30RB
+│       ├── carrier_chiller.yaml    ← Carrier 30XA / 30RB
+│       ├── abb_vfd.yaml           ← ABB ACS580/ACS880 VFD
+│       └── honeywell_gas_meter.yaml ← Honeywell Elster gas meter
 │
 ├── templates/
 │   ├── step1.html               ← Site info: name, unit ID, engineer, date
@@ -436,6 +443,11 @@ validation on real RevPi.
 - [x] first_boot.sh — license provisioning, MSTP binary build, full setup
 - [x] Modbus simulator (`tools/modbus_simulator.py`) — standalone Modbus TCP
       server on port 5020, cycling BESS data with fault simulation every ~120s
+- [x] Modbus RTU poller (`src/rtu_poller.py`) — reads multiple RTU devices on
+      RS485, each with its own profile. DEV_MODE simulates. RS485 port has
+      three modes: disabled, modbus_rtu, bacnet_mstp (mutually exclusive)
+- [x] 7 device profiles — Tesla BESS, Shark 200, SMA Solar, Cummins Generator,
+      Carrier Chiller, ABB VFD, Honeywell Gas Meter
 
 **TODO (hardware validation only):**
 - [ ] Build and test router-mstp on real RevPi hardware with RS485

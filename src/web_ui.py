@@ -56,6 +56,14 @@ def _get_mstp_status() -> dict:
     return router.status()
 
 
+def _get_rtu_status() -> dict:
+    """Get RTU poller status."""
+    rtu = app.config.get("rtu_poller")
+    if rtu is None:
+        return {"enabled": False}
+    return rtu.status()
+
+
 def _mask_to_prefix(mask: str) -> int:
     """Convert subnet mask like 255.255.255.0 to prefix length like 24."""
     try:
@@ -140,15 +148,36 @@ def step3():
                     "alarm_on_fault": request.form.get(f"di_{ch}_alarm") == "on",
                 })
         cfg["di_inputs"] = di_inputs
-        # MSTP settings
+        # RS485 mode
+        rs485_mode = request.form.get("rs485_mode", "disabled")
+        cfg.setdefault("rs485", {})
+        cfg["rs485"]["mode"] = rs485_mode
+        cfg["rs485"]["port"] = "/dev/ttyRS485"
+        # MSTP settings (when mode = bacnet_mstp)
         cfg.setdefault("mstp", {})
-        cfg["mstp"]["enabled"] = request.form.get("mstp_enabled") == "on"
+        cfg["mstp"]["enabled"] = rs485_mode == "bacnet_mstp"
         cfg["mstp"]["mac"] = int(request.form.get("mstp_mac", 127))
         cfg["mstp"]["baud"] = int(request.form.get("mstp_baud", 38400))
         cfg["mstp"]["mstp_network"] = int(request.form.get("mstp_network", 2))
         cfg["mstp"]["port"] = "/dev/ttyRS485"
         cfg["mstp"]["max_master"] = 127
         cfg["mstp"]["ip_network"] = 1
+        # RTU settings (when mode = modbus_rtu)
+        if rs485_mode == "modbus_rtu":
+            cfg["rs485"]["baud"] = int(request.form.get("rtu_baud", 9600))
+            cfg["rs485"]["parity"] = request.form.get("rtu_parity", "N")
+            cfg["rs485"]["stopbits"] = 1
+            rtu_devices = []
+            for i in range(4):
+                addr = request.form.get(f"rtu_{i}_addr", "").strip()
+                profile = request.form.get(f"rtu_{i}_profile", "").strip()
+                if addr and profile:
+                    rtu_devices.append({
+                        "address": int(addr),
+                        "profile": profile,
+                        "device_id": 0,
+                    })
+            cfg["rtu_devices"] = rtu_devices
         save_config(cfg)
         return redirect(url_for("step4"))
     # GET — pass license and DI reader for template
@@ -409,6 +438,7 @@ def api_status():
             "tier_name": _license.tier_name,
             "valid": _license.valid,
         },
+        "rtu": _get_rtu_status(),
         "di_hardware": {
             "expected": True,
             "present": os.path.exists("/dev/piControl0"),
@@ -723,9 +753,10 @@ def _resolve_bind_ip(config: dict) -> str:
         return "0.0.0.0"
 
 
-def run_webui(config: dict, mstp_router=None, di_reader=None):
+def run_webui(config: dict, mstp_router=None, di_reader=None, rtu_poller=None):
     app.config["mstp_router"] = mstp_router
     app.config["di_reader"] = di_reader
+    app.config["rtu_poller"] = rtu_poller
     bind_ip = _resolve_bind_ip(config)
     port = config.get("webui_port", 80)
     log.info(f"Setup wizard on http://{bind_ip}:{port}")
