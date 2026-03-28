@@ -22,6 +22,7 @@ from bacpypes3.local.analog import AnalogInputObject, AnalogValueObject
 from bacpypes3.local.binary import BinaryInputObject
 
 from data_store import DataStore
+from revpi_di import RevPiDIReader
 
 log = logging.getLogger(__name__)
 
@@ -76,9 +77,11 @@ class BACnetServer:
     asyncio event loop in the calling thread.
     """
 
-    def __init__(self, config: dict, store: DataStore):
+    def __init__(self, config: dict, store: DataStore,
+                 di_reader: Optional[RevPiDIReader] = None):
         self.config = config
         self.store = store
+        self.di_reader = di_reader
         self.device_id = config["bacnet"]["device_id"]
         self.device_name = config["bacnet"]["device_name"]
         self.interface = config["bacnet"].get("bind_interface", "eth1")
@@ -195,6 +198,25 @@ class BACnetServer:
             self._bi_objects[instance] = obj
             log.debug(f"Created BI:{instance} {name}")
 
+        # Create Binary Inputs for RevPi DI channels (BI:7 - BI:20)
+        di_count = 0
+        if self.di_reader:
+            for di in self.di_reader.get_enabled_inputs():
+                obj = BinaryInputObject(
+                    objectIdentifier=("binaryInput", di.bi_instance),
+                    objectName=di.name,
+                    description=di.description,
+                    presentValue="inactive",
+                    activeText="ACTIVE",
+                    inactiveText="NORMAL",
+                )
+                self._app.add_object(obj)
+                self._bi_objects[di.bi_instance] = obj
+                di_count += 1
+                log.debug(f"Created BI:{di.bi_instance} {di.name} (DI ch{di.channel})")
+            if di_count:
+                log.info(f"Created {di_count} DI-sourced Binary Inputs (BI:7-BI:20)")
+
         # Create Analog Values (writable)
         for instance, name, units, description, writable in ANALOG_VALUES:
             obj = AnalogValueObject(
@@ -209,7 +231,9 @@ class BACnetServer:
             log.debug(f"Created AV:{instance} {name}")
 
         log.info(f"BACnet server ready — {len(ANALOG_INPUTS)} AI, "
-                 f"{len(BINARY_INPUTS)} BI, {len(ANALOG_VALUES)} AV")
+                 f"{len(BINARY_INPUTS) + di_count} BI "
+                 f"({len(BINARY_INPUTS)} BESS + {di_count} DI), "
+                 f"{len(ANALOG_VALUES)} AV")
 
     def _update_points(self):
         """Push current DataStore values into BACnet present values."""
@@ -247,6 +271,13 @@ class BACnetServer:
 
             # Analog Value (writable command point)
             self._av_objects[1].presentValue = data.bess_active_power_cmd_kw
+
+            # DI-sourced Binary Inputs (BI:7 - BI:20)
+            if self.di_reader:
+                for di in self.di_reader.get_enabled_inputs():
+                    bi = self._bi_objects.get(di.bi_instance)
+                    if bi is not None:
+                        bi.presentValue = "active" if di.is_active else "inactive"
 
             if stale:
                 log.warning("BACnet update with STALE data")

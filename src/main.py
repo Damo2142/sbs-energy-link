@@ -27,6 +27,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 from data_store import store
 from poller import ModbusPoller
 from bacnet_server import BACnetServer
+from revpi_di import RevPiDIReader
 from web_ui import run_webui
 
 # ---------------------------------------------------------------------------
@@ -163,8 +164,18 @@ def main():
     threads.append(t)
     t.start()
 
+    # --- RevPi DI Module Reader ---
+    di_reader = RevPiDIReader(config)
+    t_di = threading.Thread(
+        target=di_reader.run,
+        name="revpi-di",
+        daemon=True
+    )
+    threads.append(t_di)
+    t_di.start()
+
     # --- BACnet Server ---
-    bacnet = BACnetServer(config, store)
+    bacnet = BACnetServer(config, store, di_reader)
     t2 = threading.Thread(
         target=bacnet.run,
         name="bacnet-server",
@@ -188,6 +199,7 @@ def main():
         log.info("Shutdown signal received")
         if not args.sim:
             poller.stop()
+        di_reader.stop()
         bacnet.stop()
         sys.exit(0)
 
