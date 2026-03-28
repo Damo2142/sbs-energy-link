@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SBS EnergyLink — {% block title %}Setup{% endblock %}</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Arial,sans-serif;background:#0D1117;color:#F5F5F5;min-height:100vh;display:flex;flex-direction:column}
+    .header{background:#161B22;border-bottom:3px solid #C00000;padding:14px 24px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+    .header h1{font-size:1.2rem;color:#C00000}
+    .header .license-info{font-size:0.72rem;color:#8B949E;margin-left:8px}
+    .header .right{margin-left:auto;display:flex;align-items:center;gap:8px}
+    .badge{padding:3px 10px;border-radius:12px;font-size:0.68rem;font-weight:bold;letter-spacing:0.5px}
+    .badge.bess{background:#C00000;color:#fff}
+    .badge.universal{background:#2563EB;color:#fff}
+    .badge.pro{background:#7C3AED;color:#fff}
+    .nav{display:flex;background:#161B22;border-bottom:1px solid #2D333B;padding:0 24px}
+    .nav a{padding:10px 18px;font-size:0.8rem;color:#8B949E;text-decoration:none;border-bottom:2px solid transparent}
+    .nav a:hover{color:#F5F5F5}
+    .nav a.active{color:#F5F5F5;border-bottom-color:#C00000;font-weight:bold}
+    .steps{display:flex;background:#0D1117;border-bottom:1px solid #2D333B;padding:0 24px;flex-wrap:wrap}
+    .step{padding:12px 16px;font-size:0.78rem;color:#8B949E;border-bottom:3px solid transparent;cursor:default}
+    .step.active{color:#F5F5F5;border-bottom-color:#C00000;font-weight:bold}
+    .step.done{color:#2EA043}
+    .main{flex:1;display:flex;justify-content:center;padding:32px}
+    .card{background:#161B22;border:1px solid #2D333B;border-radius:8px;padding:32px;width:100%;max-width:820px}
+    .card h2{font-size:1.1rem;margin-bottom:6px}
+    .card p{font-size:0.85rem;color:#8B949E;margin-bottom:20px}
+    .form-group{margin-bottom:16px}
+    label{display:block;font-size:0.78rem;color:#8B949E;margin-bottom:6px}
+    input,select{width:100%;background:#0D1117;border:1px solid #2D333B;border-radius:4px;padding:10px 12px;color:#F5F5F5;font-size:0.9rem}
+    input:focus,select:focus{outline:none;border-color:#C00000}
+    .row{display:flex;gap:12px}
+    .row .form-group{flex:1}
+    .btn{background:#C00000;color:#fff;border:none;border-radius:4px;padding:11px 28px;font-size:0.9rem;cursor:pointer;width:100%;margin-top:8px}
+    .btn:hover{background:#a00000}
+    .btn-test{background:#1F2937;color:#F5F5F5;border:1px solid #2D333B;border-radius:4px;padding:9px 20px;font-size:0.85rem;cursor:pointer;margin-bottom:12px}
+    .btn-test:hover{background:#2a3544}
+    .result{margin-top:8px;padding:8px 12px;border-radius:4px;font-size:0.82rem;display:none}
+    .result.ok{background:#1a3a2a;color:#2EA043;display:block}
+    .result.err{background:#3a1a1a;color:#e74c3c;display:block}
+    .hint{font-size:0.78rem;color:#8B949E;margin-top:4px}
+    .divider{border:none;border-top:1px solid #2D333B;margin:20px 0}
+    .section-label{font-size:0.88rem;color:#388BFD;margin-bottom:14px;font-weight:bold}
+    .info-box{background:#0D1117;border:1px solid #2D333B;border-left:3px solid #388BFD;border-radius:4px;padding:14px;margin-bottom:20px;font-size:0.83rem;color:#8B949E;line-height:1.55}
+    .ok{color:#2EA043} .warn{color:#D29922} .err{color:#e74c3c}
+    {% block extra_css %}{% endblock %}
+  </style>
+</head>
+<body>
+<div class="header">
+  <span style="color:#C00000;font-size:1.3rem">&#9889;</span>
+  <h1>SBS EnergyLink</h1>
+  {% if lic %}
+  <span class="license-info">{{ lic.product }} / {{ lic.serial }}</span>
+  {% endif %}
+  <div class="right">
+    {% if lic %}
+    <span class="badge {{ lic.tier }}">{{ lic.tier_name }}</span>
+    {% endif %}
+    <span style="font-size:0.8rem;color:#8B949E">{% block header_right %}{% endblock %}</span>
+  </div>
+</div>
+<div class="nav">
+  <a href="/step1" class="{{ 'active' if active_nav == 'wizard' else '' }}">Setup Wizard</a>
+  <a href="/dashboard" class="{{ 'active' if active_nav == 'dashboard' else '' }}">Live Data</a>
+</div>
+{% block steps %}{% endblock %}
+{% block content %}{% endblock %}
+{% block scripts %}{% endblock %}
+</body>
+</html>

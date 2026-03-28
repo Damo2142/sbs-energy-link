@@ -1,56 +1,14 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SBS EnergyLink — Setup (2 of 5)</title>
-  <style>
-    *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:Arial,sans-serif;background:#0D1117;color:#F5F5F5;min-height:100vh;display:flex;flex-direction:column}
-    .header{background:#161B22;border-bottom:3px solid #C00000;padding:14px 24px;display:flex;align-items:center;gap:12px}
-    .header h1{font-size:1.2rem;color:#C00000}
-    .header span{font-size:0.8rem;color:#8B949E;margin-left:auto}
-    .nav{display:flex;background:#161B22;border-bottom:1px solid #2D333B;padding:0 24px}
-    .nav a{padding:10px 18px;font-size:0.8rem;color:#8B949E;text-decoration:none;border-bottom:2px solid transparent}
-    .nav a:hover{color:#F5F5F5}
-    .nav a.active{color:#F5F5F5;border-bottom-color:#C00000;font-weight:bold}
-    .steps{display:flex;background:#0D1117;border-bottom:1px solid #2D333B;padding:0 24px;flex-wrap:wrap}
-    .step{padding:12px 16px;font-size:0.78rem;color:#8B949E;border-bottom:3px solid transparent}
-    .step.active{color:#F5F5F5;border-bottom-color:#C00000;font-weight:bold}
-    .step.done{color:#2EA043}
-    .main{flex:1;display:flex;justify-content:center;padding:32px}
-    .card{background:#161B22;border:1px solid #2D333B;border-radius:8px;padding:32px;width:100%;max-width:580px}
-    .card h2{font-size:1.1rem;margin-bottom:6px}
-    .card p{font-size:0.85rem;color:#8B949E;margin-bottom:20px}
-    .form-group{margin-bottom:16px}
-    label{display:block;font-size:0.78rem;color:#8B949E;margin-bottom:6px}
-    input,select{width:100%;background:#0D1117;border:1px solid #2D333B;border-radius:4px;padding:10px 12px;color:#F5F5F5;font-size:0.9rem}
-    input:focus,select:focus{outline:none;border-color:#C00000}
-    .row{display:flex;gap:12px}
-    .row .form-group{flex:1}
-    .btn{background:#C00000;color:#fff;border:none;border-radius:4px;padding:11px 28px;font-size:0.9rem;cursor:pointer;width:100%;margin-top:8px}
-    .btn:hover{background:#a00000}
-    .btn-test{background:#1F2937;color:#F5F5F5;border:1px solid #2D333B;border-radius:4px;padding:9px 20px;font-size:0.85rem;cursor:pointer;margin-bottom:12px}
-    .result{margin-top:8px;padding:8px 12px;border-radius:4px;font-size:0.82rem;display:none}
-    .result.ok{background:#1a3a2a;color:#2EA043;display:block}
-    .result.err{background:#3a1a1a;color:#e74c3c;display:block}
-    .hint{font-size:0.78rem;color:#8B949E;margin-top:4px}
-    .divider{border:none;border-top:1px solid #2D333B;margin:20px 0}
-    .section-label{font-size:0.88rem;color:#388BFD;margin-bottom:14px;font-weight:bold}
+{% extends "base.html" %}
+{% set active_nav = "wizard" %}
+{% block title %}Setup (2 of 5){% endblock %}
+{% block header_right %}Step 2 of 5{% endblock %}
+{% block extra_css %}
     .static-fields{display:none}
     .static-fields.show{display:block}
-  </style>
-</head>
-<body>
-<div class="header">
-  <span style="color:#C00000;font-size:1.3rem">&#9889;</span>
-  <h1>SBS EnergyLink</h1>
-  <span>Step 2 of 5</span>
-</div>
-<div class="nav">
-  <a href="/step1" class="active">Setup Wizard</a>
-  <a href="/dashboard">Live Data</a>
-</div>
+    .profile-section{display:none}
+    .profile-section.show{display:block}
+{% endblock %}
+{% block steps %}
 <div class="steps">
   <div class="step done">1 &middot; Site &#10003;</div>
   <div class="step active">2 &middot; EPMS / eth0</div>
@@ -58,6 +16,8 @@
   <div class="step">4 &middot; Confirm</div>
   <div class="step">5 &middot; Handoff</div>
 </div>
+{% endblock %}
+{% block content %}
 <div class="main">
   <div class="card">
     <h2>Step 2 &mdash; EPMS Connection &amp; eth0 Network</h2>
@@ -80,11 +40,11 @@
         <div class="row">
           <div class="form-group">
             <label>Subnet Mask</label>
-            <input type="text" name="eth0_mask" value="{{ cfg.eth0.subnet_mask if cfg.eth0 else '255.255.255.0' }}" placeholder="255.255.255.0">
+            <input type="text" name="eth0_mask" value="{{ cfg.eth0.subnet_mask if cfg.eth0 else '255.255.255.0' }}">
           </div>
           <div class="form-group">
             <label>Gateway</label>
-            <input type="text" name="eth0_gateway" value="{{ cfg.eth0.gateway if cfg.eth0 else '' }}" placeholder="192.168.1.1">
+            <input type="text" name="eth0_gateway" value="{{ cfg.eth0.gateway if cfg.eth0 else '' }}">
           </div>
         </div>
       </div>
@@ -92,12 +52,25 @@
       <hr class="divider">
       <div class="section-label">&#128268; Modbus TCP &mdash; EPMS</div>
 
+      {% if lic and lic.is_universal_or_pro %}
+      <div class="info-box">
+        <strong style="color:#388BFD">&#8505; Device Profile</strong><br>
+        Select a built-in profile or manually configure registers.
+        {% if lic.is_pro %}Excel/CSV import is also available.{% endif %}
+      </div>
       <div class="form-group">
-        <label>EPMS / Tesla Site Controller IP Address</label>
+        <label>Device Profile</label>
+        <select name="device_profile" id="device_profile" onchange="profileChanged()">
+          <option value="">Loading profiles...</option>
+        </select>
+      </div>
+      {% endif %}
+
+      <div class="form-group">
+        <label>EPMS / Device IP Address</label>
         <input type="text" name="modbus_host" id="modbus_host"
                value="{{ cfg.modbus.host if cfg.modbus else '' }}"
                placeholder="192.168.1.50" required>
-        <div class="hint">Confirm with the EPMS vendor or energy team</div>
       </div>
       <div class="row">
         <div class="form-group">
@@ -122,27 +95,135 @@
       <button type="button" class="btn-test" onclick="testConn()">Test EPMS Connection</button>
       <div id="result" class="result"></div>
 
+      {% if lic and lic.is_universal_or_pro %}
+      <hr class="divider">
+      <div class="section-label">&#128270; Test Register</div>
+      <div class="info-box">Read a single register from the device to verify connectivity and data.</div>
+      <div class="row">
+        <div class="form-group">
+          <label>Register Address</label>
+          <input type="number" id="test_addr" placeholder="200" style="max-width:120px">
+        </div>
+        <div class="form-group">
+          <label>Type</label>
+          <select id="test_type" style="max-width:120px">
+            <option value="INT16">INT16</option>
+            <option value="INT32">INT32</option>
+            <option value="FLOAT">FLOAT</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>FC</label>
+          <select id="test_fc" style="max-width:80px">
+            <option value="4">FC04</option>
+            <option value="3">FC03</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Scale</label>
+          <input type="number" id="test_scale" value="1.0" step="0.001" style="max-width:80px">
+        </div>
+      </div>
+      <button type="button" class="btn-test" onclick="testRegister()">Read Register</button>
+      <div id="reg-result" class="result"></div>
+      {% endif %}
+
+      {% if lic and lic.is_pro %}
+      <hr class="divider">
+      <div class="section-label">&#128196; Import Register Map</div>
+      <div class="info-box">Upload an Excel (.xlsx) or CSV file with your register map. You will map columns before import.</div>
+      <div class="form-group">
+        <input type="file" id="import-file" accept=".xlsx,.csv" style="font-size:0.85rem">
+      </div>
+      <button type="button" class="btn-test" onclick="importFile()">Upload &amp; Detect Columns</button>
+      <div id="import-result" class="result"></div>
+      {% endif %}
+
       <button type="submit" class="btn">Save &amp; Continue &rarr;</button>
     </form>
   </div>
 </div>
+{% endblock %}
+{% block scripts %}
 <script>
 function toggleStatic(){
   var el=document.getElementById('static-fields');
   el.className=document.getElementById('eth0_mode').value==='static'?'static-fields show':'static-fields';
 }
 toggleStatic();
+
 function testConn(){
   var el=document.getElementById("result");
   el.className="result";el.textContent="Testing...";el.style.display="block";
   fetch("/api/test_modbus")
     .then(function(r){return r.json()})
     .then(function(d){
-      if(d.ok){el.className="result ok";el.textContent="&#10003; Connected to "+d.host+":"+d.port;}
-      else{el.className="result err";el.textContent="&#10007; "+( d.error||"No response");}
+      if(d.ok){el.className="result ok";el.textContent="\u2713 Connected to "+d.host+":"+d.port+(d.dev_mode?" (DEV_MODE)":"");}
+      else{el.className="result err";el.textContent="\u2717 "+(d.error||"No response");}
     })
-    .catch(function(e){el.className="result err";el.textContent="&#10007; Error: "+e;});
+    .catch(function(e){el.className="result err";el.textContent="\u2717 Error: "+e;});
 }
+
+{% if lic and lic.is_universal_or_pro %}
+// Load profiles
+fetch("/api/profiles").then(r=>r.json()).then(function(d){
+  var sel=document.getElementById("device_profile");
+  sel.innerHTML='<option value="">-- Select a profile --</option>';
+  d.profiles.forEach(function(p){
+    var opt=document.createElement("option");
+    opt.value=p.file;opt.textContent=p.name+" ("+p.register_count+" registers)";
+    sel.appendChild(opt);
+  });
+});
+
+function profileChanged(){
+  var sel=document.getElementById("device_profile");
+  if(!sel.value)return;
+  fetch("/api/profile/"+sel.value).then(r=>r.json()).then(function(d){
+    if(d.ok&&d.profile){
+      var p=d.profile;
+      var portEl=document.querySelector('[name="modbus_port"]');
+      var unitEl=document.querySelector('[name="modbus_unit_id"]');
+      if(p.default_port)portEl.value=p.default_port;
+      if(p.default_unit_id)unitEl.value=p.default_unit_id;
+    }
+  });
+}
+
+function testRegister(){
+  var el=document.getElementById("reg-result");
+  el.className="result";el.textContent="Reading...";el.style.display="block";
+  fetch("/api/test_register",{
+    method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      address:parseInt(document.getElementById("test_addr").value),
+      type:document.getElementById("test_type").value,
+      function_code:parseInt(document.getElementById("test_fc").value),
+      scale:parseFloat(document.getElementById("test_scale").value)
+    })
+  }).then(r=>r.json()).then(function(d){
+    if(d.ok){el.className="result ok";el.textContent="\u2713 Reg "+d.address+": raw="+d.raw+" scaled="+d.scaled+(d.dev_mode?" (simulated)":"");}
+    else{el.className="result err";el.textContent="\u2717 "+(d.error||"Failed");}
+  }).catch(function(e){el.className="result err";el.textContent="\u2717 "+e;});
+}
+{% endif %}
+
+{% if lic and lic.is_pro %}
+function importFile(){
+  var el=document.getElementById("import-result");
+  var file=document.getElementById("import-file").files[0];
+  if(!file){el.className="result err";el.textContent="\u2717 Select a file first";return;}
+  el.className="result";el.textContent="Uploading...";el.style.display="block";
+  var fd=new FormData();fd.append("file",file);
+  fetch("/api/import_registers",{method:"POST",body:fd})
+    .then(r=>r.json()).then(function(d){
+      if(d.ok&&d.step==="detect"){
+        el.className="result ok";
+        el.textContent="\u2713 Detected "+d.total_rows+" rows. Columns: "+d.columns.join(", ")+". Preview: "+JSON.stringify(d.preview[0]);
+      }else if(!d.ok){el.className="result err";el.textContent="\u2717 "+(d.error||"Failed");}
+      else{el.className="result ok";el.textContent="\u2713 Imported "+d.count+" registers";}
+    }).catch(function(e){el.className="result err";el.textContent="\u2717 "+e;});
+}
+{% endif %}
 </script>
-</body>
-</html>
+{% endblock %}

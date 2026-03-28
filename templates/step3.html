@@ -1,48 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SBS EnergyLink — Setup (3 of 5)</title>
-  <style>
-    *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:Arial,sans-serif;background:#0D1117;color:#F5F5F5;min-height:100vh;display:flex;flex-direction:column}
-    .header{background:#161B22;border-bottom:3px solid #C00000;padding:14px 24px;display:flex;align-items:center;gap:12px}
-    .header h1{font-size:1.2rem;color:#C00000}
-    .header span{font-size:0.8rem;color:#8B949E;margin-left:auto}
-    .badge{background:#C00000;color:#fff;padding:3px 10px;border-radius:12px;font-size:0.7rem;font-weight:bold;margin-left:8px}
-    .badge.pro{background:#7C3AED}
-    .badge.universal{background:#2563EB}
-    .license-info{font-size:0.72rem;color:#8B949E;margin-left:8px}
-    .nav{display:flex;background:#161B22;border-bottom:1px solid #2D333B;padding:0 24px}
-    .nav a{padding:10px 18px;font-size:0.8rem;color:#8B949E;text-decoration:none;border-bottom:2px solid transparent}
-    .nav a:hover{color:#F5F5F5}
-    .nav a.active{color:#F5F5F5;border-bottom-color:#C00000;font-weight:bold}
-    .steps{display:flex;background:#0D1117;border-bottom:1px solid #2D333B;padding:0 24px;flex-wrap:wrap}
-    .step{padding:12px 16px;font-size:0.78rem;color:#8B949E;border-bottom:3px solid transparent}
-    .step.active{color:#F5F5F5;border-bottom-color:#C00000;font-weight:bold}
-    .step.done{color:#2EA043}
-    .main{flex:1;display:flex;justify-content:center;padding:32px}
-    .card{background:#161B22;border:1px solid #2D333B;border-radius:8px;padding:32px;width:100%;max-width:820px}
-    .card h2{font-size:1.1rem;margin-bottom:6px}
-    .card p{font-size:0.85rem;color:#8B949E;margin-bottom:20px}
-    .form-group{margin-bottom:16px}
-    label{display:block;font-size:0.78rem;color:#8B949E;margin-bottom:6px}
-    input,select{width:100%;background:#0D1117;border:1px solid #2D333B;border-radius:4px;padding:10px 12px;color:#F5F5F5;font-size:0.9rem}
-    input:focus,select:focus{outline:none;border-color:#C00000}
-    .row{display:flex;gap:12px}
-    .row .form-group{flex:1}
-    .btn{background:#C00000;color:#fff;border:none;border-radius:4px;padding:11px 28px;font-size:0.9rem;cursor:pointer;width:100%;margin-top:8px}
-    .btn:hover{background:#a00000}
-    .btn-test{background:#1F2937;color:#F5F5F5;border:1px solid #2D333B;border-radius:4px;padding:9px 20px;font-size:0.85rem;cursor:pointer;margin-bottom:12px}
-    .result{margin-top:8px;padding:8px 12px;border-radius:4px;font-size:0.82rem;display:none}
-    .result.ok{background:#1a3a2a;color:#2EA043;display:block}
-    .result.err{background:#3a1a1a;color:#e74c3c;display:block}
-    .hint{font-size:0.78rem;color:#8B949E;margin-top:4px}
-    .divider{border:none;border-top:1px solid #2D333B;margin:20px 0}
-    .section-label{font-size:0.88rem;color:#388BFD;margin-bottom:14px;font-weight:bold}
-    .info-box{background:#0D1117;border:1px solid #2D333B;border-left:3px solid #388BFD;border-radius:4px;padding:14px;margin-bottom:20px;font-size:0.83rem;color:#8B949E;line-height:1.55}
-    /* DI Table */
+{% extends "base.html" %}
+{% set active_nav = "wizard" %}
+{% block title %}Setup (3 of 5){% endblock %}
+{% block header_right %}Step 3 of 5{% endblock %}
+{% block extra_css %}
     .di-table{width:100%;border-collapse:collapse;font-size:0.8rem;margin-bottom:16px}
     .di-table th{text-align:left;padding:8px 6px;color:#8B949E;border-bottom:1px solid #2D333B;font-weight:normal;font-size:0.72rem;text-transform:uppercase}
     .di-table td{padding:6px;border-bottom:1px solid #1a1f2b}
@@ -52,25 +12,10 @@
     .di-state{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}
     .di-state.on{background:#2EA043}
     .di-state.off{background:#484F58}
-    /* MSTP section */
     .toggle-row{display:flex;align-items:center;gap:10px;margin-bottom:14px}
     .toggle-label{font-size:0.85rem;color:#F5F5F5}
-  </style>
-</head>
-<body>
-<div class="header">
-  <span style="color:#C00000;font-size:1.3rem">&#9889;</span>
-  <h1>SBS EnergyLink</h1>
-  {% if lic %}
-  <span class="license-info">{{ lic.product }} / {{ lic.serial }}</span>
-  <span class="badge {% if lic.tier == 'pro' %}pro{% elif lic.tier == 'universal' %}universal{% endif %}">{{ lic.tier_name }}</span>
-  {% endif %}
-  <span>Step 3 of 5</span>
-</div>
-<div class="nav">
-  <a href="/step1" class="active">Setup Wizard</a>
-  <a href="/dashboard">Live Data</a>
-</div>
+{% endblock %}
+{% block steps %}
 <div class="steps">
   <div class="step done">1 &middot; Site &#10003;</div>
   <div class="step done">2 &middot; EPMS &#10003;</div>
@@ -78,6 +23,8 @@
   <div class="step">4 &middot; Confirm</div>
   <div class="step">5 &middot; Handoff</div>
 </div>
+{% endblock %}
+{% block content %}
 <div class="main">
   <div class="card">
     <h2>Step 3 &mdash; BAS Network, BACnet &amp; Inputs</h2>
@@ -86,70 +33,52 @@
     <div class="info-box">
       <strong style="color:#388BFD">&#8505; This IP is what the BAS sees</strong><br>
       The eth1 IP address you set here is what the BAS integrator will point their system at.
-      Give them this IP and the BACnet Device ID after setup is complete.
     </div>
 
     <form method="POST" action="/step3">
       <div class="section-label">&#128268; eth1 &mdash; BAS / Customer Network</div>
-
       <div class="form-group">
         <label>eth1 IP Address (static)</label>
-        <input type="text" name="eth1_ip"
-               value="{{ cfg.eth1.ip_address if cfg.eth1 else '' }}"
-               placeholder="192.168.1.100" required>
-        <div class="hint">Assign an IP on the BAS/building network</div>
+        <input type="text" name="eth1_ip" value="{{ cfg.eth1.ip_address if cfg.eth1 else '' }}" placeholder="192.168.1.100" required>
       </div>
       <div class="row">
         <div class="form-group">
           <label>Subnet Mask</label>
-          <input type="text" name="eth1_mask"
-                 value="{{ cfg.eth1.subnet_mask if cfg.eth1 else '255.255.255.0' }}"
-                 placeholder="255.255.255.0">
+          <input type="text" name="eth1_mask" value="{{ cfg.eth1.subnet_mask if cfg.eth1 else '255.255.255.0' }}">
         </div>
         <div class="form-group">
           <label>Default Gateway</label>
-          <input type="text" name="eth1_gateway"
-                 value="{{ cfg.eth1.gateway if cfg.eth1 else '' }}"
-                 placeholder="192.168.1.1">
+          <input type="text" name="eth1_gateway" value="{{ cfg.eth1.gateway if cfg.eth1 else '' }}">
         </div>
       </div>
       <div class="form-group">
         <label>DNS Server (optional)</label>
-        <input type="text" name="eth1_dns"
-               value="{{ cfg.eth1.dns if cfg.eth1 else '' }}"
-               placeholder="8.8.8.8">
+        <input type="text" name="eth1_dns" value="{{ cfg.eth1.dns if cfg.eth1 else '' }}" placeholder="8.8.8.8">
       </div>
 
       <hr class="divider">
       <div class="section-label">&#128225; BACnet/IP</div>
-
       <div class="row">
         <div class="form-group">
           <label>BACnet Device ID</label>
-          <input type="number" name="bacnet_device_id"
-                 value="{{ cfg.bacnet.device_id if cfg.bacnet else 9001 }}">
+          <input type="number" name="bacnet_device_id" value="{{ cfg.bacnet.device_id if cfg.bacnet else 9001 }}">
           <div class="hint">Default: 9001</div>
         </div>
         <div class="form-group">
           <label>BACnet Device Name</label>
-          <input type="text" name="bacnet_device_name"
-                 value="{{ cfg.bacnet.device_name if cfg.bacnet else '' }}"
-                 placeholder="SBS-EnergyLink-001">
+          <input type="text" name="bacnet_device_name" value="{{ cfg.bacnet.device_name if cfg.bacnet else '' }}" placeholder="SBS-EnergyLink-001">
         </div>
       </div>
-
       <button type="button" class="btn-test" onclick="testBACnet()">Test BACnet Server</button>
       <div id="bacnet-result" class="result"></div>
 
       <hr class="divider">
       <div class="section-label">&#128297; Digital Inputs &mdash; RevPi DI Module</div>
-
       <div class="info-box">
         14 digital inputs at 24VDC from the RevPi DI expansion module.
         Enabled inputs appear as BACnet Binary Input objects <strong>BI:7</strong> through <strong>BI:20</strong>.
         Set normal state to match field wiring (normally open or normally closed).
       </div>
-
       <table class="di-table">
         <thead>
           <tr>
@@ -194,25 +123,20 @@
 
       <hr class="divider">
       <div class="section-label">&#128268; BACnet MSTP &mdash; RS485</div>
-
       <div class="info-box">
         Enable MSTP to serve the same BACnet points on the RS485 trunk simultaneously with BACnet/IP.
         Uses the RevPi onboard RS485 port (/dev/ttyRS485). Requires the router-mstp binary.
       </div>
-
       <div class="toggle-row">
         <input type="checkbox" name="mstp_enabled" id="mstp_enabled" style="width:auto"
-               {% if cfg.get('mstp', {}).get('enabled') %}checked{% endif %}
-               onchange="toggleMSTP()">
+               {% if cfg.get('mstp', {}).get('enabled') %}checked{% endif %} onchange="toggleMSTP()">
         <label for="mstp_enabled" class="toggle-label">Enable MSTP routing</label>
       </div>
-
       <div id="mstp-fields" style="display:none">
         <div class="row">
           <div class="form-group">
             <label>MSTP MAC Address (0-127)</label>
-            <input type="number" name="mstp_mac" min="0" max="127"
-                   value="{{ cfg.get('mstp', {}).get('mac', 127) }}">
+            <input type="number" name="mstp_mac" min="0" max="127" value="{{ cfg.get('mstp', {}).get('mac', 127) }}">
           </div>
           <div class="form-group">
             <label>Baud Rate</label>
@@ -227,8 +151,7 @@
         </div>
         <div class="form-group">
           <label>MSTP Network Number</label>
-          <input type="number" name="mstp_network" min="1" max="65534"
-                 value="{{ cfg.get('mstp', {}).get('mstp_network', 2) }}">
+          <input type="number" name="mstp_network" min="1" max="65534" value="{{ cfg.get('mstp', {}).get('mstp_network', 2) }}">
           <div class="hint">Must differ from IP network (1). Default: 2</div>
         </div>
       </div>
@@ -237,41 +160,30 @@
     </form>
   </div>
 </div>
+{% endblock %}
+{% block scripts %}
 <script>
 function testBACnet(){
   var el=document.getElementById("bacnet-result");
   el.className="result";el.textContent="Checking...";el.style.display="block";
-  fetch("/api/bacnet_test")
-    .then(function(r){return r.json()})
-    .then(function(d){
-      if(d.ok){el.className="result ok";el.textContent="\u2713 BACnet server listening on "+d.ip+":"+d.port;}
-      else{el.className="result err";el.textContent="\u2717 "+(d.error||"BACnet not active");}
-    })
-    .catch(function(e){el.className="result err";el.textContent="\u2717 Error: "+e;});
+  fetch("/api/bacnet_test").then(r=>r.json()).then(function(d){
+    if(d.ok){el.className="result ok";el.textContent="\u2713 BACnet server listening on "+d.ip+":"+d.port;}
+    else{el.className="result err";el.textContent="\u2717 "+(d.error||"BACnet not active");}
+  }).catch(function(e){el.className="result err";el.textContent="\u2717 Error: "+e;});
 }
-
 function toggleMSTP(){
-  var el=document.getElementById("mstp-fields");
-  el.style.display=document.getElementById("mstp_enabled").checked?"block":"none";
+  document.getElementById("mstp-fields").style.display=document.getElementById("mstp_enabled").checked?"block":"none";
 }
 toggleMSTP();
-
 {% if dev_mode %}
-// Poll DI sim states every 2 seconds
 setInterval(function(){
-  fetch("/api/di_status")
-    .then(function(r){return r.json()})
-    .then(function(d){
-      d.inputs.forEach(function(inp){
-        var td=document.getElementById("di-sim-"+inp.channel);
-        if(td){
-          var cls=inp.raw_value?"di-state on":"di-state off";
-          td.innerHTML='<span class="'+cls+'"></span>';
-        }
-      });
-    }).catch(function(){});
-}, 2000);
+  fetch("/api/di_status").then(r=>r.json()).then(function(d){
+    d.inputs.forEach(function(inp){
+      var td=document.getElementById("di-sim-"+inp.channel);
+      if(td){td.innerHTML='<span class="di-state '+(inp.raw_value?"on":"off")+'"></span>';}
+    });
+  }).catch(function(){});
+},2000);
 {% endif %}
 </script>
-</body>
-</html>
+{% endblock %}

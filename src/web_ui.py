@@ -83,7 +83,7 @@ def step1():
         cfg["install_date"] = request.form.get("install_date", "").strip()
         save_config(cfg)
         return redirect(url_for("step2"))
-    return render_template("step1.html", cfg=cfg)
+    return render_template("step1.html", cfg=cfg, lic=_license)
 
 
 @app.route("/step2", methods=["GET", "POST"])
@@ -104,7 +104,7 @@ def step2():
         cfg["eth0"]["gateway"] = request.form.get("eth0_gateway", "").strip()
         save_config(cfg)
         return redirect(url_for("step3"))
-    return render_template("step2.html", cfg=cfg)
+    return render_template("step2.html", cfg=cfg, lic=_license, dev_mode=_dev_mode())
 
 
 @app.route("/step3", methods=["GET", "POST"])
@@ -160,19 +160,19 @@ def step3():
 @app.route("/step4")
 def step4():
     cfg = load_config()
-    return render_template("step4.html", cfg=cfg)
+    return render_template("step4.html", cfg=cfg, lic=_license, dev_mode=_dev_mode())
 
 
 @app.route("/step5")
 def step5():
     cfg = load_config()
-    return render_template("step5.html", cfg=cfg)
+    return render_template("step5.html", cfg=cfg, lic=_license)
 
 
 @app.route("/dashboard")
 def dashboard():
     cfg = load_config()
-    return render_template("dashboard.html", cfg=cfg)
+    return render_template("dashboard.html", cfg=cfg, lic=_license)
 
 
 # ---------------------------------------------------------------------------
